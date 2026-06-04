@@ -31,9 +31,17 @@ export default function TunerDisplay({ note, octave, freq, cents, status, active
   const angle = Math.max(-50, Math.min(50, cents)) * 0.9;
   const noteColor =
     status === "tuned" ? "text-tuned" : status === "idle" ? "text-on-surface-variant" : "text-primary";
+  // Cores semânticas: afinado=verde, agudo=vermelho (solte), grave=azul (aperte).
+  const centsColor = status === "tuned" ? "text-tuned" : status === "sharp" ? "text-error" : "text-blue";
 
   return (
-    <div className="relative flex h-56 w-full flex-col items-center justify-end overflow-hidden rounded-b-lg rounded-t-[150px] border-4 border-[#222] bg-dial-bg pb-8 shadow-[inset_0_4px_15px_rgba(0,0,0,0.9),inset_0_0_20px_rgba(0,0,0,0.5)] sm:h-64">
+    <div
+      className={`relative flex h-56 w-full flex-col items-center justify-end overflow-hidden rounded-b-lg rounded-t-[150px] border-4 bg-dial-bg pb-8 shadow-[inset_0_4px_15px_rgba(0,0,0,0.9),inset_0_0_20px_rgba(0,0,0,0.5)] transition-[border-color,box-shadow] duration-300 sm:h-64 ${
+        status === "tuned"
+          ? "border-tuned/70 shadow-[inset_0_4px_15px_rgba(0,0,0,0.9),0_0_25px_rgba(61,202,122,0.35)]"
+          : "border-[#222]"
+      }`}
+    >
       <div className="analog-dial pointer-events-none absolute inset-0 opacity-20" />
 
       {/* Escala graduada */}
@@ -76,16 +84,20 @@ export default function TunerDisplay({ note, octave, freq, cents, status, active
           {active ? `${freq.toFixed(1)} Hz` : "0.0 Hz"}
         </div>
         {active && (
-          <div className="font-share-tech text-sm text-secondary/80">
+          <div className={`font-share-tech text-sm transition-colors ${centsColor}`}>
             {cents > 0 ? "+" : ""}
             {cents.toFixed(0)} cents
           </div>
         )}
       </div>
 
-      {/* Ponteiro */}
+      {/* Ponteiro — fica verde quando afinado (física de mola via spring) */}
       <motion.div
-        className="absolute bottom-[-10px] left-1/2 z-20 h-[150px] w-1.5 origin-bottom -translate-x-1/2 rounded-t-full bg-needle-amber shadow-[0_0_12px_rgba(255,179,71,0.9)]"
+        className={`absolute bottom-[-10px] left-1/2 z-20 h-[150px] w-1.5 origin-bottom -translate-x-1/2 rounded-t-full transition-[background-color,box-shadow] duration-300 ${
+          status === "tuned"
+            ? "bg-tuned shadow-[0_0_14px_rgba(61,202,122,0.9)]"
+            : "bg-needle-amber shadow-[0_0_12px_rgba(255,179,71,0.9)]"
+        }`}
         animate={{ rotate: angle }}
         transition={{ type: "spring", stiffness: 120, damping: 16, mass: 0.5 }}
       />

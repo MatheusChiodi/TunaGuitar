@@ -46,10 +46,12 @@ function StatusBar({ status, error }: { status: TuneStatus; error: string | null
   );
 }
 
+const HOLD_MARGIN = 3; // histerese: afina em ±tolerância, só desafina em ±(tolerância+3)
+
 export default function TunerPage() {
-  const { a4, setA4, tolerance, tuningId } = useSettings();
+  const { a4, setA4, tolerance, tuningId, sensitivity } = useSettings();
   const { track } = useGamify();
-  const { frequency, isListening, error, start, stop } = usePitchDetection();
+  const { frequency, isListening, error, start, stop } = usePitchDetection(sensitivity);
   const [mode, setMode] = useState<"auto" | "manual">("auto");
   const [selected, setSelected] = useState(0);
 
@@ -60,13 +62,15 @@ export default function TunerPage() {
   const targetMidi = mode === "auto" && active ? midiFromFrequency(frequency, a4) : strings[selected].midi;
   const targetNote = noteFromMidi(targetMidi);
   const cents = active ? centsOff(frequency, targetMidi, a4) : 0;
-  const status: TuneStatus = !active
-    ? "idle"
-    : Math.abs(cents) <= tolerance
-      ? "tuned"
-      : cents < 0
-        ? "flat"
-        : "sharp";
+
+  // Histerese no estado afinado — sem piscar quando a leitura fica na borda.
+  const tunedRef = useRef(false);
+  const absCents = Math.abs(cents);
+  if (!active) tunedRef.current = false;
+  else if (!tunedRef.current && absCents <= tolerance) tunedRef.current = true;
+  else if (tunedRef.current && absCents > tolerance + HOLD_MARGIN) tunedRef.current = false;
+
+  const status: TuneStatus = !active ? "idle" : tunedRef.current ? "tuned" : cents < 0 ? "flat" : "sharp";
 
   useEffect(() => {
     if (mode === "auto" && active) {

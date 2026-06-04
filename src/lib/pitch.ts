@@ -71,64 +71,114 @@ export function nearestStringIndex(freq: number, strings: GuitarString[], a4 = 4
   return best;
 }
 
+/** RMS (energia) do buffer — usado como gate de volume contra silêncio/ruído. */
+export function rms(buf: Float32Array): number {
+  let sum = 0;
+  for (let i = 0; i < buf.length; i++) sum += buf[i] * buf[i];
+  return Math.sqrt(sum / buf.length);
+}
+
+/** Mediana — robusta a outliers, ao contrário da média. */
+export function median(values: number[]): number {
+  if (values.length === 0) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = sorted.length >> 1;
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
+export interface PitchResult {
+  frequency: number;
+  /** Confiança da detecção (0..1). Quanto mais perto de 1, mais limpa a nota. */
+  clarity: number;
+}
+
+export interface DetectOptions {
+  minFrequency?: number;
+  maxFrequency?: number;
+  /** Limiar absoluto do YIN (0.10–0.15 conforme o paper). */
+  threshold?: number;
+}
+
+// Acima deste salto, a integração da diferença trunca para conter o custo.
+const MAX_WINDOW = 4096;
+
 /**
- * Detecção de pitch por autocorrelação (algoritmo ACF2+).
- * Retorna a frequência fundamental em Hz, ou -1 quando não há sinal confiável.
+ * Detecção de pitch via YIN — diferença média cumulativa normalizada (CMND)
+ * com janela Hann e interpolação parabólica.
+ *
+ * Por que YIN e não autocorrelação pura: a CMND penaliza lags curtos, então o
+ * PRIMEIRO vale abaixo do limiar é o período FUNDAMENTAL. Isso elimina o erro
+ * de oitava (detectar 220/440 Hz no lugar de 110 Hz) que faz a agulha pular.
+ * A interpolação parabólica refina o período para precisão sub-amostra (~±1 cent).
  */
-export function autoCorrelate(buf: Float32Array, sampleRate: number): number {
+export function detectPitch(buf: Float32Array, sampleRate: number, opts: DetectOptions = {}): PitchResult | null {
   const SIZE = buf.length;
-  let rms = 0;
-  for (let i = 0; i < SIZE; i++) rms += buf[i] * buf[i];
-  rms = Math.sqrt(rms / SIZE);
-  if (rms < 0.01) return -1; // silêncio / sinal fraco
+  const minFrequency = opts.minFrequency ?? 60;
+  const maxFrequency = opts.maxFrequency ?? 1200;
+  const THRESHOLD = opts.threshold ?? 0.15;
 
-  // Recorta a região central onde o sinal tem amplitude suficiente.
-  let r1 = 0;
-  let r2 = SIZE - 1;
-  const threshold = 0.2;
-  for (let i = 0; i < SIZE / 2; i++) {
-    if (Math.abs(buf[i]) < threshold) {
-      r1 = i;
+  const minLag = Math.max(2, Math.floor(sampleRate / maxFrequency));
+  const maxLag = Math.min(SIZE - 1, Math.floor(sampleRate / minFrequency));
+  if (maxLag <= minLag) return null;
+
+  // Janela Hann: reduz vazamento espectral antes da função de diferença.
+  const w = new Float32Array(SIZE);
+  for (let i = 0; i < SIZE; i++) {
+    w[i] = buf[i] * 0.5 * (1 - Math.cos((2 * Math.PI * i) / (SIZE - 1)));
+  }
+
+  // Janela de integração constante para todos os lags (normalização YIN correta).
+  const window = Math.min(SIZE - maxLag, MAX_WINDOW);
+
+  // Diferença quadrática d(lag) + CMND in-place. cmnd[lag] < THRESHOLD ⇒ período.
+  const cmnd = new Float32Array(maxLag + 1);
+  cmnd[0] = 1;
+  let runningSum = 0;
+  for (let lag = minLag; lag <= maxLag; lag++) {
+    let sum = 0;
+    for (let i = 0; i < window; i++) {
+      const delta = w[i] - w[i + lag];
+      sum += delta * delta;
+    }
+    runningSum += sum;
+    cmnd[lag] = runningSum === 0 ? 1 : (sum * (lag - minLag + 1)) / runningSum;
+  }
+
+  // Primeiro vale abaixo do limiar absoluto = fundamental (não harmônico).
+  let tau = -1;
+  for (let lag = minLag; lag <= maxLag; lag++) {
+    if (cmnd[lag] < THRESHOLD) {
+      // Desce até o fundo deste vale local.
+      while (lag + 1 <= maxLag && cmnd[lag + 1] < cmnd[lag]) lag++;
+      tau = lag;
       break;
     }
   }
-  for (let i = 1; i < SIZE / 2; i++) {
-    if (Math.abs(buf[SIZE - i]) < threshold) {
-      r2 = SIZE - i;
-      break;
+
+  // Fallback: nenhum vale passou o limiar → mínimo global, se for confiável.
+  if (tau === -1) {
+    let min = Infinity;
+    for (let lag = minLag; lag <= maxLag; lag++) {
+      if (cmnd[lag] < min) {
+        min = cmnd[lag];
+        tau = lag;
+      }
     }
+    if (min > 0.2) return null; // confiança baixa demais — rejeita
   }
 
-  const trimmed = buf.slice(r1, r2);
-  const n = trimmed.length;
-  if (n < 2) return -1;
-
-  const c = new Array<number>(n).fill(0);
-  for (let i = 0; i < n; i++) {
-    for (let j = 0; j < n - i; j++) c[i] += trimmed[j] * trimmed[j + i];
+  // Interpolação parabólica em torno do vale → precisão sub-amostra.
+  let betterTau = tau;
+  if (tau > minLag && tau < maxLag) {
+    const s0 = cmnd[tau - 1];
+    const s1 = cmnd[tau];
+    const s2 = cmnd[tau + 1];
+    const denom = 2 * (2 * s1 - s2 - s0);
+    if (denom !== 0) betterTau = tau + (s2 - s0) / denom;
   }
 
-  // Pula o decaimento inicial e acha o pico de autocorrelação.
-  let d = 0;
-  while (d < n - 1 && c[d] > c[d + 1]) d++;
-  let maxval = -1;
-  let maxpos = -1;
-  for (let i = d; i < n; i++) {
-    if (c[i] > maxval) {
-      maxval = c[i];
-      maxpos = i;
-    }
-  }
-  let T0 = maxpos;
-  if (T0 <= 0) return -1;
+  const frequency = sampleRate / betterTau;
+  if (frequency < minFrequency || frequency > maxFrequency) return null;
 
-  // Interpolação parabólica para refinar o período.
-  const x1 = c[T0 - 1];
-  const x2 = c[T0];
-  const x3 = c[T0 + 1] ?? c[T0];
-  const a = (x1 + x3 - 2 * x2) / 2;
-  const b = (x3 - x1) / 2;
-  if (a) T0 = T0 - b / (2 * a);
-
-  return sampleRate / T0;
+  return { frequency, clarity: 1 - cmnd[tau] };
 }
