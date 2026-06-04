@@ -121,7 +121,7 @@ export default function TunerPage() {
           <div className="flex h-8 w-8 items-center justify-center rounded-full border border-[#222] bg-linear-to-br from-[#444] to-[#111] shadow-inner">
             <Music className="h-4 w-4 text-on-surface" />
           </div>
-          <h2 className="font-headline text-lg uppercase tracking-widest text-on-surface">Afinador Pro</h2>
+          <h1 className="font-headline text-lg uppercase tracking-widest text-on-surface">Afinador Pro</h1>
         </div>
         <div className="flex items-center gap-2">
           <span className="font-label text-[11px] tracking-widest text-on-surface-variant">
