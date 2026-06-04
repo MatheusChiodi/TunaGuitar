@@ -115,11 +115,79 @@ export function scalePitchClasses(tonic: number, scale: ScaleDef): number[] {
 
 /** Transpõe um nome de acorde (cifra) em N semitons. */
 export function transposeChord(symbol: string, semitones: number): string {
-  const match = symbol.match(/^([A-G]#?b?)(.*)$/);
+  const match = symbol.match(/^([A-G][#b]?)(.*)$/);
   if (!match) return symbol;
   const [, root, rest] = match;
-  const idx = NOTE_NAMES.indexOf(root.replace("b", ""));
-  const base = idx >= 0 ? idx : NOTE_NAMES.indexOf(root[0]);
-  const pc = (((base + semitones) % 12) + 12) % 12;
-  return pcName(pc) + rest;
+  const pc = (noteToPc(root) + semitones + 1200) % 12;
+  // Preserva baixo invertido (slash chord)
+  const restTransposed = rest.replace(/\/([A-G][#b]?)/, (_, b: string) => `/${pcName((noteToPc(b) + semitones + 1200) % 12)}`);
+  return pcName(pc) + restTransposed;
+}
+
+/** Converte nome de nota (com # ou b) em pitch class. */
+export function noteToPc(s: string): number {
+  const m = s.match(/^([A-Ga-g])([#b]?)/);
+  if (!m) return 0;
+  const base: Record<string, number> = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+  let pc = base[m[1].toUpperCase()] ?? 0;
+  if (m[2] === "#") pc += 1;
+  else if (m[2] === "b") pc -= 1;
+  return ((pc % 12) + 12) % 12;
+}
+
+export interface ParsedChord {
+  symbol: string;
+  root: number;
+  intervals: number[];
+  bass: number | null;
+  quality: "maj" | "min" | "dim" | "aug" | "dom";
+}
+
+const QUALITY_TABLE: { re: RegExp; intervals: number[]; quality: ParsedChord["quality"] }[] = [
+  { re: /^maj7|^M7/, intervals: [0, 4, 7, 11], quality: "maj" },
+  { re: /^maj9/, intervals: [0, 4, 7, 11, 14], quality: "maj" },
+  { re: /^maj/, intervals: [0, 4, 7], quality: "maj" },
+  { re: /^m7b5|^ø/, intervals: [0, 3, 6, 10], quality: "dim" },
+  { re: /^m7|^min7|^-7/, intervals: [0, 3, 7, 10], quality: "min" },
+  { re: /^m9|^min9/, intervals: [0, 3, 7, 10, 14], quality: "min" },
+  { re: /^m6|^min6/, intervals: [0, 3, 7, 9], quality: "min" },
+  { re: /^dim7|^°7|^o7/, intervals: [0, 3, 6, 9], quality: "dim" },
+  { re: /^dim|^°|^o/, intervals: [0, 3, 6], quality: "dim" },
+  { re: /^aug|^\+/, intervals: [0, 4, 8], quality: "aug" },
+  { re: /^sus2/, intervals: [0, 2, 7], quality: "maj" },
+  { re: /^sus4|^sus/, intervals: [0, 5, 7], quality: "maj" },
+  { re: /^add9/, intervals: [0, 4, 7, 14], quality: "maj" },
+  { re: /^9/, intervals: [0, 4, 7, 10, 14], quality: "dom" },
+  { re: /^7/, intervals: [0, 4, 7, 10], quality: "dom" },
+  { re: /^6/, intervals: [0, 4, 7, 9], quality: "maj" },
+  { re: /^m|^min|^-/, intervals: [0, 3, 7], quality: "min" },
+];
+
+/** Faz o parse de uma cifra (ex.: "Am7", "G/B", "C#dim") em estrutura harmônica. */
+export function parseChord(symbol: string): ParsedChord | null {
+  const m = symbol.trim().match(/^([A-G][#b]?)(.*)$/);
+  if (!m) return null;
+  const root = noteToPc(m[1]);
+  let rest = m[2];
+  let bass: number | null = null;
+  const slash = rest.match(/\/([A-G][#b]?)\s*$/);
+  if (slash && slash.index !== undefined) {
+    bass = noteToPc(slash[1]);
+    rest = rest.slice(0, slash.index);
+  }
+  let intervals = [0, 4, 7];
+  let quality: ParsedChord["quality"] = "maj";
+  for (const q of QUALITY_TABLE) {
+    if (q.re.test(rest)) {
+      intervals = q.intervals;
+      quality = q.quality;
+      break;
+    }
+  }
+  return { symbol: symbol.trim(), root, intervals, bass, quality };
+}
+
+/** Detecta tokens de acorde em um texto livre. */
+export function isChordToken(token: string): boolean {
+  return /^[A-G][#b]?(m|maj|min|dim|aug|sus|add|°|ø|o|\+|-|\d|M|b5)*(\/[A-G][#b]?)?$/.test(token) && /[A-G]/.test(token[0]);
 }

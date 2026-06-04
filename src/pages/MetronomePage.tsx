@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Minus, Play, Plus, Square } from "lucide-react";
 import { SUBDIVISIONS, TIME_SIGNATURES, tempoName, useMetronome } from "../hooks/useMetronome";
 import type { ClickType } from "../lib/audio";
+import { useGamify } from "../context/GamifyContext";
 
 const CLICKS: { id: ClickType; name: string }[] = [
   { id: "wood", name: "Madeira" },
@@ -28,8 +29,13 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
 
 export default function MetronomePage() {
   const m = useMetronome();
+  const { track } = useGamify();
   const [editing, setEditing] = useState(false);
   const secondsPerBeat = 60 / m.bpm;
+
+  useEffect(() => {
+    if (m.isPlaying && m.bpm > 180) track("fastBpm");
+  }, [m.isPlaying, m.bpm, track]);
 
   return (
     <div className="w-full max-w-2xl px-4 py-6 md:py-10">

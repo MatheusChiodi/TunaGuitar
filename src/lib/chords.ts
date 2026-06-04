@@ -178,4 +178,10 @@ EXOTIC.forEach((e) =>
 
 export const CHORDS: ChordEntry[] = entries;
 
+/** Procura um diagrama existente para uma cifra (ex.: "Am7"). */
+export function getChordBySymbol(symbol: string): ChordEntry | undefined {
+  const s = symbol.trim();
+  return CHORDS.find((c) => c.symbol === s) ?? CHORDS.find((c) => c.symbol.toLowerCase() === s.toLowerCase());
+}
+
 export const CHORD_CATEGORIES = ["Maiores", "Menores", "Sétimas", "Diminutos", "Aumentados", "Suspensos", "Barra", "Exóticos"];

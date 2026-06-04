@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Download, Pause, Play, RotateCcw, Share2, Star, Upload } from "lucide-react";
 import { load, save } from "../lib/storage";
+import { useGamify } from "../context/GamifyContext";
 
 interface Session {
   date: string;
@@ -40,6 +41,7 @@ export default function PracticePage() {
   const [rating, setRating] = useState(0);
   const [copied, setCopied] = useState(false);
 
+  const { track } = useGamify();
   const tick = useRef<number | undefined>(undefined);
   const chartRef = useRef<HTMLCanvasElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -65,6 +67,8 @@ export default function PracticePage() {
       rating,
     };
     persist([s, ...sessions]);
+    track("diaryLog");
+    track("practiceMin", minutes);
     setSeconds(0);
     setRunning(false);
     setNotes("");

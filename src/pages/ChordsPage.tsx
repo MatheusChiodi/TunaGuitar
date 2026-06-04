@@ -6,12 +6,14 @@ import ChordDiagram from "../components/ChordDiagram";
 import { CHORDS, CHORD_CATEGORIES, voicingMidis, type ChordEntry } from "../lib/chords";
 import { audio } from "../lib/audio";
 import { load, save } from "../lib/storage";
+import { useGamify } from "../context/GamifyContext";
 
 const TABS = ["Todos", ...CHORD_CATEGORIES, "Favoritos"];
 
 function ChordCard({ entry, fav, onToggleFav }: { entry: ChordEntry; fav: boolean; onToggleFav: () => void }) {
   const [vi, setVi] = useState(0);
   const navigate = useNavigate();
+  const { track } = useGamify();
   const v = entry.voicings[vi];
 
   return (
@@ -50,7 +52,10 @@ function ChordCard({ entry, fav, onToggleFav }: { entry: ChordEntry; fav: boolea
 
       <div className="mt-2 flex gap-2">
         <button
-          onClick={() => audio.playNotes(voicingMidis(v.frets), { arpeggio: true })}
+          onClick={() => {
+            audio.playNotes(voicingMidis(v.frets), { arpeggio: true });
+            track("chordLearn");
+          }}
           className="flex flex-1 cursor-pointer items-center justify-center gap-1 rounded-lg border border-accent/40 bg-accent/10 py-1.5 font-label text-[10px] uppercase tracking-widest text-accent"
         >
           <Volume2 className="h-3.5 w-3.5" /> Ouvir

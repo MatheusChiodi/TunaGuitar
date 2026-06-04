@@ -1,15 +1,24 @@
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { BookOpen, ChevronDown, Music2, Network, Play, Table2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { audio } from "../lib/audio";
 import { BR_NAMES, INTERVALS, NOTE_NAMES, OPEN_STRINGS, pcName } from "../lib/theory";
+import { useGamify } from "../context/GamifyContext";
 
-function Accordion({ icon: Icon, title, children }: { icon: LucideIcon; title: string; children: ReactNode }) {
+function Accordion({ icon: Icon, title, children, onOpen }: { icon: LucideIcon; title: string; children: ReactNode; onOpen?: () => void }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="overflow-hidden rounded-xl border border-[#2a2a2a] bg-surface-lowest">
-      <button onClick={() => setOpen((o) => !o)} className="flex w-full cursor-pointer items-center gap-3 px-4 py-4 text-left">
+      <button
+        onClick={() =>
+          setOpen((o) => {
+            if (!o) onOpen?.();
+            return !o;
+          })
+        }
+        className="flex w-full cursor-pointer items-center gap-3 px-4 py-4 text-left"
+      >
         <Icon className="h-5 w-5 shrink-0 text-accent" />
         <span className="flex-1 font-headline text-base text-on-surface">{title}</span>
         <motion.span animate={{ rotate: open ? 180 : 0 }}>
@@ -56,6 +65,12 @@ const FORMULAS = [
 export default function TheoryPage() {
   const [sel, setSel] = useState<{ s: number; f: number } | null>(null);
   const [chordRoot, setChordRoot] = useState(0);
+  const { track } = useGamify();
+  const opened = useRef(new Set<string>());
+  const markOpen = (id: string) => {
+    opened.current.add(id);
+    if (opened.current.size >= 5) track("theoryComplete");
+  };
 
   const playProg = (chords: { s: number; q: string }[]) => {
     chords.forEach((c, i) =>
@@ -72,7 +87,7 @@ export default function TheoryPage() {
 
       <div className="flex flex-col gap-3">
         {/* 1. Notas e o braço */}
-        <Accordion icon={Music2} title="Notas e o Braço do Violão">
+        <Accordion icon={Music2} title="Notas e o Braço do Violão" onOpen={() => markOpen("notes")}>
           {selNote && (
             <p className="mb-3 text-center font-orbitron text-3xl text-accent">
               {selNote} <span className="font-share-tech text-sm text-on-surface-variant">({BR_NAMES[selNote[0]]}{selNote.length > 1 ? "♯" : ""})</span>
@@ -113,7 +128,7 @@ export default function TheoryPage() {
         </Accordion>
 
         {/* 2. Intervalos */}
-        <Accordion icon={Network} title="Intervalos">
+        <Accordion icon={Network} title="Intervalos" onOpen={() => markOpen("intervals")}>
           <table className="w-full border-collapse font-share-tech text-sm">
             <thead>
               <tr className="text-left text-on-surface-variant">
@@ -143,7 +158,7 @@ export default function TheoryPage() {
         </Accordion>
 
         {/* 3. Construção de acordes */}
-        <Accordion icon={BookOpen} title="Construção de Acordes">
+        <Accordion icon={BookOpen} title="Construção de Acordes" onOpen={() => markOpen("chords")}>
           <div className="mb-4 flex items-center gap-2 font-share-tech text-sm">
             <span className="text-on-surface-variant">Tônica:</span>
             <select value={chordRoot} onChange={(e) => setChordRoot(Number(e.target.value))} className="cursor-pointer rounded border border-[#2a2a2a] bg-[#0a0a0a] px-2 py-1 text-on-surface outline-none">
@@ -166,7 +181,7 @@ export default function TheoryPage() {
         </Accordion>
 
         {/* 4. Progressões */}
-        <Accordion icon={Network} title="Progressões Populares">
+        <Accordion icon={Network} title="Progressões Populares" onOpen={() => markOpen("prog")}>
           <div className="flex flex-col gap-4">
             {PROGRESSIONS.map((p) => (
               <div key={p.name} className="rounded-lg border border-[#222] bg-[#0a0a0a] p-4">
@@ -193,7 +208,7 @@ export default function TheoryPage() {
         </Accordion>
 
         {/* 5. Cifra BR */}
-        <Accordion icon={Table2} title="Cifra Brasileira vs. Internacional">
+        <Accordion icon={Table2} title="Cifra Brasileira vs. Internacional" onOpen={() => markOpen("cifra")}>
           <div className="grid grid-cols-2 gap-2 font-share-tech text-sm sm:grid-cols-4">
             {Object.entries(BR_NAMES).map(([intl, br]) => (
               <div key={intl} className="flex items-center justify-center gap-2 rounded-lg border border-[#222] bg-[#0a0a0a] py-2.5">

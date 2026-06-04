@@ -7,6 +7,7 @@ import Controls from "../components/Controls";
 import { usePitchDetection } from "../hooks/usePitchDetection";
 import { centsOff, getTuning, midiFromFrequency, nearestStringIndex, noteFromMidi, type TuneStatus } from "../lib/pitch";
 import { useSettings } from "../context/SettingsContext";
+import { useGamify } from "../context/GamifyContext";
 
 const pedalVariants: Variants = {
   hidden: {},
@@ -46,6 +47,7 @@ function StatusBar({ status, error }: { status: TuneStatus; error: string | null
 
 export default function TunerPage() {
   const { a4, setA4, tolerance, tuningId } = useSettings();
+  const { track } = useGamify();
   const { frequency, isListening, error, start, stop } = usePitchDetection();
   const [mode, setMode] = useState<"auto" | "manual">("auto");
   const [selected, setSelected] = useState(0);
@@ -123,7 +125,13 @@ export default function TunerPage() {
           mode={mode}
           onModeChange={setMode}
           listening={isListening}
-          onToggle={() => (isListening ? stop() : start())}
+          onToggle={() => {
+            if (isListening) stop();
+            else {
+              void start();
+              track("tune");
+            }
+          }}
         />
       </motion.div>
     </motion.div>

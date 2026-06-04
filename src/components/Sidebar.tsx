@@ -3,10 +3,11 @@ import { NavLink } from "react-router-dom";
 import { AudioLines, PanelLeftClose, PanelLeftOpen, Settings } from "lucide-react";
 import { NAV } from "../lib/nav";
 import { useSettings } from "../context/SettingsContext";
+import { t } from "../lib/i18n";
 import { load, save } from "../lib/storage";
 
 export default function Sidebar() {
-  const { openSettings } = useSettings();
+  const { openSettings, lang } = useSettings();
   const [collapsed, setCollapsed] = useState<boolean>(() => load("tg.sidebar", false));
 
   const toggle = () =>
@@ -39,7 +40,7 @@ export default function Sidebar() {
             key={item.to}
             to={item.to}
             end={item.end}
-            title={item.label}
+            title={t(lang, item.key)}
             className={({ isActive }) =>
               `flex items-center gap-3 rounded-lg px-3 py-2.5 font-label text-xs tracking-wide transition-colors ${
                 isActive
@@ -49,7 +50,7 @@ export default function Sidebar() {
             }
           >
             <item.icon className="h-5 w-5 shrink-0" />
-            {!collapsed && <span className="truncate uppercase">{item.label}</span>}
+            {!collapsed && <span className="truncate uppercase">{t(lang, item.key)}</span>}
           </NavLink>
         ))}
       </nav>

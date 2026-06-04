@@ -4,6 +4,7 @@ import { Check, Flame, Play, Share2, X } from "lucide-react";
 import { audio } from "../lib/audio";
 import { CHORD_QUALITIES, INTERVALS, NOTE_NAMES, pcName } from "../lib/theory";
 import { load, save } from "../lib/storage";
+import { useGamify } from "../context/GamifyContext";
 
 type Mode = "note" | "interval" | "chord";
 
@@ -81,6 +82,7 @@ export default function EarTrainingPage() {
   const [best, setBest] = useState(0);
   const [store, setStore] = useState<Stored>(() => load("tg.ear", { xp: 0, history: [] }));
   const [copied, setCopied] = useState(false);
+  const { track } = useGamify();
 
   useEffect(() => save("tg.ear", store), [store]);
 
@@ -98,12 +100,12 @@ export default function EarTrainingPage() {
     setSelected(value);
     const ok = value === q.answer;
     if (ok) {
+      const ns = streak + 1;
       const gained = 10 + streak * 2;
-      setStreak((s) => {
-        const ns = s + 1;
-        setBest((b) => Math.max(b, ns));
-        return ns;
-      });
+      setStreak(ns);
+      setBest((b) => Math.max(b, ns));
+      track("earCorrect");
+      if (ns >= 10) track("earStreak10");
       setStore((st) => ({ xp: st.xp + gained, history: [{ mode: q.mode, correct: true }, ...st.history].slice(0, 10) }));
     } else {
       setStreak(0);

@@ -15,6 +15,8 @@ interface ToneOpts {
 class AudioEngine {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
+  private noise: AudioBuffer | null = null;
+  private masterVolume = 0.9;
 
   ensure(): AudioContext {
     if (!this.ctx) {
@@ -22,7 +24,7 @@ class AudioEngine {
         window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       this.ctx = new Ctor();
       this.master = this.ctx.createGain();
-      this.master.gain.value = 0.9;
+      this.master.gain.value = this.masterVolume;
       this.master.connect(this.ctx.destination);
     }
     if (this.ctx.state === "suspended") void this.ctx.resume();
@@ -31,6 +33,75 @@ class AudioEngine {
 
   get currentTime(): number {
     return this.ensure().currentTime;
+  }
+
+  get destination(): GainNode {
+    this.ensure();
+    return this.master as GainNode;
+  }
+
+  setMasterVolume(v: number): void {
+    this.masterVolume = v;
+    if (this.master) this.master.gain.value = v;
+  }
+
+  private getNoise(): AudioBuffer {
+    const ctx = this.ensure();
+    if (!this.noise) {
+      this.noise = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+      const data = this.noise.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+    }
+    return this.noise;
+  }
+
+  /** Acorde sintetizado com envelope ADSR suave (A10 D100 S0.7 R300). */
+  synthChord(midis: number[], when?: number, duration = 1.6): void {
+    const ctx = this.ensure();
+    const t = when ?? ctx.currentTime + 0.03;
+    const peak = 0.22 / Math.max(1, Math.sqrt(midis.length));
+    midis.forEach((m) => {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = "triangle";
+      osc.frequency.value = midiToFreq(m);
+      osc.connect(g);
+      g.connect(this.master as GainNode);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(peak, t + 0.01); // attack
+      g.gain.linearRampToValueAtTime(peak * 0.7, t + 0.11); // decay → sustain
+      g.gain.setValueAtTime(peak * 0.7, t + Math.max(0.12, duration - 0.3));
+      g.gain.exponentialRampToValueAtTime(0.0001, t + duration); // release
+      osc.start(t);
+      osc.stop(t + duration + 0.05);
+    });
+  }
+
+  /** Palhetada percussiva via ruído filtrado. */
+  strum(when: number, type: "down" | "up" | "chuck", volume = 1): void {
+    const ctx = this.ensure();
+    const src = ctx.createBufferSource();
+    src.buffer = this.getNoise();
+    const filter = ctx.createBiquadFilter();
+    filter.type = "bandpass";
+    const g = ctx.createGain();
+    src.connect(filter);
+    filter.connect(g);
+    g.connect(this.master as GainNode);
+
+    const cfg =
+      type === "down"
+        ? { freq: 420, q: 0.8, dur: 0.17, gain: 0.5 }
+        : type === "up"
+          ? { freq: 1300, q: 1.1, dur: 0.12, gain: 0.4 }
+          : { freq: 800, q: 1.4, dur: 0.05, gain: 0.45 };
+    filter.frequency.value = cfg.freq;
+    filter.Q.value = cfg.q;
+    g.gain.setValueAtTime(0.0001, when);
+    g.gain.linearRampToValueAtTime(cfg.gain * volume, when + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, when + cfg.dur);
+    src.start(when);
+    src.stop(when + cfg.dur + 0.02);
   }
 
   /** Toca um tom com envelope ADSR simplificado. */
