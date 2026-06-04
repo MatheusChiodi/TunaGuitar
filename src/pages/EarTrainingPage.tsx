@@ -87,7 +87,9 @@ export default function EarTrainingPage() {
   const [copied, setCopied] = useState(false);
   const { track, state: gamify } = useGamify();
 
-  useEffect(() => save("tg.ear", store), [store]);
+  useEffect(() => {
+    save("tg.ear", store);
+  }, [store]);
 
   // Radar de habilidades — derivado do histórico + contadores de gamificação (sem novo schema).
   const radar = useMemo(() => {

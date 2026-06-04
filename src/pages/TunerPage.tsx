@@ -9,6 +9,7 @@ import { centsOff, getTuning, midiFromFrequency, nearestStringIndex, noteFromMid
 import { useSettings } from "../context/SettingsContext";
 import { useGamify } from "../context/GamifyContext";
 import { toast } from "../lib/toast";
+import { load, save } from "../lib/storage";
 
 const pedalVariants: Variants = {
   hidden: {},
@@ -52,7 +53,7 @@ export default function TunerPage() {
   const { a4, setA4, tolerance, tuningId, sensitivity } = useSettings();
   const { track } = useGamify();
   const { frequency, isListening, error, start, stop } = usePitchDetection(sensitivity);
-  const [mode, setMode] = useState<"auto" | "manual">("auto");
+  const [mode, setMode] = useState<"auto" | "manual">(() => load<"auto" | "manual">("tg.tunerMode", "auto"));
   const [selected, setSelected] = useState(0);
 
   const strings = getTuning(tuningId).strings;
@@ -93,6 +94,11 @@ export default function TunerPage() {
     if (error) toast.warning(`⚠️ ${error}`);
   }, [error]);
 
+  // Persiste o modo auto/manual entre sessões (QOL-01).
+  useEffect(() => {
+    save("tg.tunerMode", mode);
+  }, [mode]);
+
   const handleSelectString = (i: number) => {
     setMode("manual");
     setSelected(i);
@@ -115,7 +121,7 @@ export default function TunerPage() {
           <div className="flex h-8 w-8 items-center justify-center rounded-full border border-[#222] bg-linear-to-br from-[#444] to-[#111] shadow-inner">
             <Music className="h-4 w-4 text-on-surface" />
           </div>
-          <h1 className="font-headline text-lg uppercase tracking-widest text-on-surface">Afinador Pro</h1>
+          <h2 className="font-headline text-lg uppercase tracking-widest text-on-surface">Afinador Pro</h2>
         </div>
         <div className="flex items-center gap-2">
           <span className="font-label text-[11px] tracking-widest text-on-surface-variant">
@@ -135,6 +141,11 @@ export default function TunerPage() {
           active={active}
         />
         <StatusBar status={status} error={error} />
+        <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+          {active
+            ? `Nota ${targetNote.note}${targetNote.octave}, ${status === "tuned" ? "afinado" : status === "flat" ? "apertar a corda" : "soltar a corda"}`
+            : "Microfone inativo"}
+        </div>
         <StringSelector strings={strings} selected={stringIndex} onSelect={handleSelectString} a4={a4} />
       </motion.section>
 

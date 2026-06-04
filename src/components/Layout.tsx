@@ -6,15 +6,23 @@ import Footer from "./Footer";
 import BottomTabBar from "./BottomTabBar";
 import SettingsModal from "./SettingsModal";
 import SmoothScroll from "./SmoothScroll";
+import CommandPalette from "./CommandPalette";
+import ErrorBoundary from "./ErrorBoundary";
 import { load, save } from "../lib/storage";
 import { startTour, tourSeen } from "../lib/tour";
+import { applyRouteMeta } from "../lib/seo";
+import { useSettings } from "../context/SettingsContext";
+import { useModuleShortcuts } from "../hooks/useModuleShortcuts";
 
 export default function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
   const outlet = useOutlet();
+  const { shortcutsEnabled } = useSettings();
   const restored = useRef(false);
   const tourStarted = useRef(false);
+
+  useModuleShortcuts(shortcutsEnabled);
 
   // Restaura a última aba ao abrir na raiz; salva a aba atual.
   useEffect(() => {
@@ -28,6 +36,11 @@ export default function Layout() {
     save("tg.lastRoute", location.pathname);
   }, [location.pathname]);
 
+  // SEO: título, descrição e canônica por rota.
+  useEffect(() => {
+    applyRouteMeta(location.pathname);
+  }, [location.pathname]);
+
   // Onboarding (Driver.js): dispara na home, após a entrada animar. Reinício via Config volta à home.
   useEffect(() => {
     if (location.pathname !== "/" || tourSeen()) return;
@@ -39,6 +52,7 @@ export default function Layout() {
 
   return (
     <div className="flex min-h-dvh w-full">
+      <a href="#main-content" className="skip-link">Pular para o conteúdo principal</a>
       <SmoothScroll />
       <Sidebar />
 
@@ -46,21 +60,24 @@ export default function Layout() {
         <AnimatePresence mode="wait">
           <motion.main
             key={location.pathname}
+            id="main-content"
             className="flex w-full flex-1 flex-col items-center"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
           >
-            <Suspense
-              fallback={
-                <div className="flex w-full flex-1 items-center justify-center py-20">
-                  <span className="font-label text-xs uppercase tracking-widest text-on-surface-variant">Carregando…</span>
-                </div>
-              }
-            >
-              {outlet}
-            </Suspense>
+            <ErrorBoundary resetKey={location.pathname}>
+              <Suspense
+                fallback={
+                  <div className="flex w-full flex-1 items-center justify-center py-20">
+                    <span className="font-label text-xs uppercase tracking-widest text-on-surface-variant">Carregando…</span>
+                  </div>
+                }
+              >
+                {outlet}
+              </Suspense>
+            </ErrorBoundary>
           </motion.main>
         </AnimatePresence>
 
@@ -69,6 +86,7 @@ export default function Layout() {
 
       <BottomTabBar />
       <SettingsModal />
+      <CommandPalette />
     </div>
   );
 }

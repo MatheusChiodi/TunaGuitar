@@ -2,23 +2,189 @@
 <html lang="pt-BR" class="dark">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <!-- ── SEO PRIMÁRIO ── -->
+    <title>Afinador de Violão Online Grátis — Pelo Microfone | TunaGuitar</title>
+    <meta
+      name="description"
+      content="Afinador de violão online grátis e preciso. Afine pelo microfone do celular ou computador em segundos, sem instalar nada. Inclui metrônomo, acordes e treino de ouvido."
+    />
+    <meta
+      name="keywords"
+      content="afinador de violão, afinador online, afinar violão, afinador pelo microfone, afinador de violão grátis, metrônomo online, acordes de violão, afinar violão online"
+    />
+    <meta name="author" content="MChiodi" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="googlebot" content="index, follow" />
+    <meta name="language" content="Portuguese" />
+
+    <!-- ── URL CANÔNICA (atualizada por rota no SPA) ── -->
+    <link rel="canonical" href="https://tuna-guitar.vercel.app/" />
+
+    <!-- ── OPEN GRAPH ── -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://tuna-guitar.vercel.app/" />
+    <meta property="og:title" content="Afinador de Violão Online Grátis — TunaGuitar" />
+    <meta
+      property="og:description"
+      content="Afine seu violão pelo microfone em segundos. Grátis, preciso e sem instalar nada. Inclui metrônomo, acordes e treino de ouvido."
+    />
+    <meta property="og:image" content="https://tuna-guitar.vercel.app/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="TunaGuitar — afinador de violão online com mostrador na nota Mi" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:site_name" content="TunaGuitar" />
+
+    <!-- ── TWITTER CARD ── -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Afinador de Violão Online Grátis — TunaGuitar" />
+    <meta name="twitter:description" content="Afine seu violão pelo microfone em segundos. Grátis e sem instalar." />
+    <meta name="twitter:image" content="https://tuna-guitar.vercel.app/og-image.png" />
+
+    <!-- ── PWA / MOBILE ── -->
     <meta name="theme-color" content="#05050A" />
-    <!-- Comportamento de app quando adicionado à tela inicial -->
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="TunaGuitar" />
-    <title>TunaGuitar — Afinador de Violão</title>
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/icon-180.png" />
+
+    <!-- ── DADOS ESTRUTURADOS ── -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "TunaGuitar — Afinador de Violão Online",
+        "url": "https://tuna-guitar.vercel.app/",
+        "description": "Afinador de violão online grátis que funciona pelo microfone. Inclui metrônomo, biblioteca de acordes e treino de ouvido.",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "Any (Web Browser)",
+        "browserRequirements": "Requires JavaScript and microphone access",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "BRL" },
+        "inLanguage": "pt-BR",
+        "author": { "@type": "Person", "name": "MChiodi" },
+        "featureList": [
+          "Afinador cromático pelo microfone",
+          "Metrônomo com tap tempo",
+          "Biblioteca de acordes de violão",
+          "Treino de ouvido",
+          "Visualizador de escalas",
+          "Calculadora de capotraste"
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Como afinar o violão pelo microfone?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Permita o acesso ao microfone quando o navegador solicitar, toque uma corda do violão e o TunaGuitar mostra em tempo real se a nota está afinada, alta ou baixa. Ajuste a corda até o indicador ficar verde."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "O afinador de violão online é grátis?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Sim, o TunaGuitar é 100% grátis, sem anúncios e sem necessidade de criar conta ou instalar aplicativo. Funciona direto no navegador do celular ou computador."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Preciso instalar algum aplicativo?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Não. O TunaGuitar funciona inteiramente no navegador usando a Web Audio API. Basta abrir o site e permitir o microfone."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Qual é a afinação padrão do violão?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "A afinação padrão do violão é E-A-D-G-B-E (Mi, Lá, Ré, Sol, Si, Mi), da sexta corda mais grave até a primeira mais aguda. O TunaGuitar também suporta afinações alternativas como Drop D e Open G."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "O afinador funciona no celular?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Sim. O TunaGuitar funciona em qualquer celular Android ou iPhone através do navegador, usando o microfone do aparelho. Também pode ser adicionado à tela inicial como um app."
+            }
+          }
+        ]
+      }
+    </script>
+
+    <!-- ── FONTES (carregamento não bloqueante) ── -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Instrument+Serif:ital@0;1&display=swap"
       rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Instrument+Serif:ital@0;1&display=swap"
+      media="print"
+      onload="this.media='all'"
     />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Instrument+Serif:ital@0;1&display=swap"
+      />
+    </noscript>
   </head>
   <body>
     <div id="root"></div>
+
+    <!-- ── CONTEÚDO INDEXÁVEL (HTML estático, fora do #root) ── -->
+    <section class="seo-about" aria-label="Sobre o afinador de violão online">
+      <h1>Afinador de Violão Online Grátis</h1>
+      <p>
+        O <strong>TunaGuitar</strong> é um afinador de violão online que funciona diretamente
+        pelo microfone do seu celular ou computador. Afine seu instrumento em segundos, com
+        precisão profissional de ±1 cent, sem instalar nenhum aplicativo e totalmente grátis.
+      </p>
+
+      <h2>Como afinar o violão</h2>
+      <p>
+        Permita o acesso ao microfone, toque cada corda e observe o indicador. A afinação
+        padrão do violão é Mi, Lá, Ré, Sol, Si, Mi (E-A-D-G-B-E), da corda mais grossa para a
+        mais fina. Além da afinação padrão, o TunaGuitar suporta Drop D, Open G, DADGAD e
+        outras afinações alternativas populares.
+      </p>
+
+      <h2>Recursos do TunaGuitar</h2>
+      <ul>
+        <li><a href="/">Afinador cromático pelo microfone</a> com precisão de ±1 cent</li>
+        <li><a href="/metronomo">Metrônomo online</a> com tap tempo e compassos variados</li>
+        <li><a href="/acordes">Biblioteca de acordes de violão</a> com diagramas</li>
+        <li><a href="/ouvido">Treino de ouvido</a> para reconhecer notas e intervalos</li>
+        <li><a href="/escalas">Visualizador de escalas</a> no braço do violão</li>
+        <li><a href="/capotraste">Calculadora de capotraste</a> e transposição</li>
+      </ul>
+
+      <p class="seo-about__foot">
+        Funciona em qualquer navegador — Chrome, Safari, Firefox e Edge — no Android, iPhone,
+        Windows ou Mac. Grátis, sem conta e sem anúncios.
+      </p>
+    </section>
+
+    <noscript>
+      <p style="text-align: center; padding: 1rem; color: #9490a0">
+        O TunaGuitar precisa de JavaScript ativado para funcionar. Ative o JavaScript no seu
+        navegador para afinar seu violão online.
+      </p>
+    </noscript>
+
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

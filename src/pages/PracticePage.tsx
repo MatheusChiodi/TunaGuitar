@@ -57,7 +57,9 @@ export default function PracticePage() {
     return () => clearInterval(tick.current);
   }, [running]);
 
-  useEffect(() => save("tg.practice", { sessions }), [sessions]);
+  useEffect(() => {
+    save("tg.practice", { sessions });
+  }, [sessions]);
 
   const persist = (next: Session[]) => setSessions(next);
 

@@ -88,7 +88,9 @@ export default function RhythmPage() {
   };
 
   useEffect(() => () => stop(), []);
-  useEffect(() => save("tg.bpm", bpm), [bpm]);
+  useEffect(() => {
+    save("tg.bpm", bpm);
+  }, [bpm]);
 
   // Treino de ritmo: avalia timing das batidas do usuário.
   const tap = () => {

@@ -8,6 +8,7 @@ import { audio } from "../lib/audio";
 import { load, save } from "../lib/storage";
 import { useGamify } from "../context/GamifyContext";
 import { useSortableList } from "../hooks/useSortableList";
+import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import SplitHeading from "../components/SplitHeading";
 import { toast } from "../lib/toast";
 
@@ -94,7 +95,8 @@ export default function CifradorPage() {
   const popupChord = popup ? parseChord(popup) : null;
   const popupEntry = popup ? getChordBySymbol(popup) : undefined;
 
-  const filtered = cifras.filter((c) => `${c.title} ${c.artist}`.toLowerCase().includes(query.toLowerCase()));
+  const dq = useDebouncedValue(query, 180);
+  const filtered = cifras.filter((c) => `${c.title} ${c.artist}`.toLowerCase().includes(dq.toLowerCase()));
 
   // Reordenar = ordem do setlist no Modo Performance (lê tg.cifras na ordem). Só com busca vazia.
   const setlistRef = useSortableList<HTMLDivElement>(

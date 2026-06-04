@@ -11,13 +11,17 @@ interface Props {
 
 export default function StringSelector({ strings, selected, onSelect, a4 = 440 }: Props) {
   return (
-    <div data-tour="strings" className="mt-8 grid w-full grid-cols-6 gap-2">
+    <div data-tour="strings" role="radiogroup" aria-label="Selecionar corda do violão" className="mt-8 grid w-full grid-cols-6 gap-2">
       {strings.map((s, i) => {
         const isActive = i === selected;
+        const hz = frequencyFromMidi(s.midi, a4).toFixed(2);
         return (
-          <Tip key={s.label} content={`${s.note}${s.octave} — ${frequencyFromMidi(s.midi, a4).toFixed(2)} Hz`}>
+          <Tip key={s.label} content={`${s.note}${s.octave} — ${hz} Hz`}>
             <motion.button
               onClick={() => onSelect(i)}
+              role="radio"
+              aria-checked={isActive}
+              aria-label={`Corda ${s.note}${s.octave}, ${hz} hertz`}
               whileTap={{ scale: 0.92 }}
               className={`relative flex aspect-square w-full cursor-pointer items-center justify-center rounded-full border-2 bg-linear-to-b from-[#333] to-[#1a1a1a] font-label text-sm transition-colors ${
                 isActive
@@ -25,7 +29,7 @@ export default function StringSelector({ strings, selected, onSelect, a4 = 440 }
                   : "border-[#111] text-on-surface hover:border-[#555]"
               }`}
             >
-              {s.label}
+              <span aria-hidden="true">{s.label}</span>
             </motion.button>
           </Tip>
         );

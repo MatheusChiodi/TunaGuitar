@@ -17,6 +17,7 @@ class AudioEngine {
   private master: GainNode | null = null;
   private noise: AudioBuffer | null = null;
   private masterVolume = 0.9;
+  private lifecycleInstalled = false;
 
   ensure(): AudioContext {
     if (!this.ctx) {
@@ -43,6 +44,28 @@ class AudioEngine {
   setMasterVolume(v: number): void {
     this.masterVolume = v;
     if (this.master) this.master.gain.value = v;
+  }
+
+  /** Suspende/retoma apenas se o contexto já existir (não cria antes de gesto do usuário). */
+  suspend(): void {
+    if (this.ctx && this.ctx.state === "running") void this.ctx.suspend();
+  }
+  resume(): void {
+    if (this.ctx && this.ctx.state === "suspended") void this.ctx.resume();
+  }
+
+  /** Suspende em aba oculta (economia de bateria) e retoma em gesto/foco (iOS). BP-06. */
+  installLifecycle(): void {
+    if (this.lifecycleInstalled || typeof document === "undefined") return;
+    this.lifecycleInstalled = true;
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) this.suspend();
+      else this.resume();
+    });
+    const resume = () => this.resume();
+    (["pointerdown", "keydown", "touchstart"] as const).forEach((ev) =>
+      document.addEventListener(ev, resume, { passive: true }),
+    );
   }
 
   private getNoise(): AudioBuffer {

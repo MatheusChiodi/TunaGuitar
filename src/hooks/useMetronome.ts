@@ -132,19 +132,22 @@ export function useMetronome() {
 
   useEffect(() => () => stop(), [stop]);
 
-  // Tap tempo: média dos últimos 4 intervalos.
+  // Tap tempo: janela deslizante de 8 com rejeição de outliers (>20% da mediana). QOL-07.
   const taps = useRef<number[]>([]);
   const tap = useCallback(() => {
     const now = performance.now();
     const arr = taps.current;
-    if (arr.length && now - arr[arr.length - 1] > 2000) arr.length = 0;
+    if (arr.length && now - arr[arr.length - 1] > 2200) arr.length = 0;
     arr.push(now);
-    if (arr.length > 5) arr.shift();
-    if (arr.length >= 2) {
-      const intervals = arr.slice(1).map((t, i) => t - arr[i]);
-      const avg = intervals.reduce((a, b) => a + b, 0) / intervals.length;
-      setBpm(Math.max(20, Math.min(300, Math.round(60000 / avg))));
-    }
+    if (arr.length > 8) arr.shift();
+    if (arr.length < 2) return;
+    const intervals = arr.slice(1).map((t, i) => t - arr[i]);
+    const sorted = [...intervals].sort((a, b) => a - b);
+    const median = sorted[Math.floor(sorted.length / 2)];
+    const clean = intervals.filter((iv) => Math.abs(iv - median) / median <= 0.2);
+    if (!clean.length) return;
+    const avg = clean.reduce((a, b) => a + b, 0) / clean.length;
+    setBpm(Math.max(20, Math.min(300, Math.round(60000 / avg))));
   }, []);
 
   return {

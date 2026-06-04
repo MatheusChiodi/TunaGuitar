@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="TunaGuitar">
+  <defs>
+    <radialGradient id="glowm" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#FF5555" stop-opacity="0.20"/>
+      <stop offset="100%" stop-color="#FF5555" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="#05050A"/>
+  <rect width="512" height="512" fill="url(#glowm)"/>
+  <g transform="translate(256 262) scale(0.78) translate(-256 -262)">
+    <g fill="none" stroke="#FF5555" stroke-width="40" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M176 158 L176 320 Q176 368 256 368 Q336 368 336 320 L336 158"/>
+      <path d="M256 368 L256 416"/>
+    </g>
+  </g>
+</svg>

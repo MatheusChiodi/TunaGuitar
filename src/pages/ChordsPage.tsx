@@ -7,6 +7,7 @@ import { CHORDS, CHORD_CATEGORIES, voicingMidis, type ChordEntry } from "../lib/
 import { audio } from "../lib/audio";
 import { load, save } from "../lib/storage";
 import { useGamify } from "../context/GamifyContext";
+import { useDebouncedValue } from "../hooks/useDebouncedValue";
 
 const TABS = ["Todos", ...CHORD_CATEGORIES, "Favoritos"];
 
@@ -77,6 +78,7 @@ export default function ChordsPage() {
   const [query, setQuery] = useState("");
   const [favs, setFavs] = useState<string[]>(() => load("tg.favChords", []));
   const [ofDay] = useState(() => CHORDS[Math.floor(Math.random() * CHORDS.length)]);
+  const dq = useDebouncedValue(query, 180);
 
   const toggleFav = (id: string) =>
     setFavs((f) => {
@@ -90,10 +92,10 @@ export default function ChordsPage() {
     if (tab === "Favoritos") l = CHORDS.filter((c) => favs.includes(c.id));
     else if (tab === "Barra") l = CHORDS.filter((c) => c.voicings.some((v) => v.barre));
     else if (tab !== "Todos") l = CHORDS.filter((c) => c.category === tab);
-    const q = query.toLowerCase().replace(/\s/g, "");
+    const q = dq.toLowerCase().replace(/\s/g, "");
     if (q) l = l.filter((c) => c.symbol.toLowerCase().includes(q));
     return l;
-  }, [tab, query, favs]);
+  }, [tab, dq, favs]);
 
   return (
     <div className="w-full max-w-5xl px-4 py-6 md:py-10">

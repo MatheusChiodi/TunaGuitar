@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://tuna-guitar.vercel.app/sitemap.xml

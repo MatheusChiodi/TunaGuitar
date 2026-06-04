@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="TunaGuitar">
+  <rect width="32" height="32" rx="7" fill="#05050A"/>
+  <rect x="0.5" y="0.5" width="31" height="31" rx="6.5" fill="none" stroke="#ffffff" stroke-opacity="0.08"/>
+  <g fill="none" stroke="#FF5555" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M11 8 L11 19 Q11 22 16 22 Q21 22 21 19 L21 8"/>
+    <path d="M16 22 L16 25.5"/>
+  </g>
+</svg>

@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="TunaGuitar — Afinador de Violão Online Grátis">
+  <defs>
+    <radialGradient id="g1" cx="18%" cy="12%" r="55%">
+      <stop offset="0%" stop-color="#FF5555" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#FF5555" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="g2" cx="92%" cy="95%" r="55%">
+      <stop offset="0%" stop-color="#F5A623" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#F5A623" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="dial" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#16161f"/>
+      <stop offset="100%" stop-color="#0a0a12"/>
+    </radialGradient>
+    <linearGradient id="title" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#cfc9ba"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Fundo -->
+  <rect width="1200" height="630" fill="#05050A"/>
+  <rect width="1200" height="630" fill="url(#g1)"/>
+  <rect width="1200" height="630" fill="url(#g2)"/>
+  <rect x="8" y="8" width="1184" height="614" rx="22" fill="none" stroke="#ffffff" stroke-opacity="0.06" stroke-width="2"/>
+
+  <!-- Bloco de texto -->
+  <g font-family="Arial, Helvetica, sans-serif">
+    <text x="84" y="150" fill="#FF5555" font-size="26" font-weight="700" letter-spacing="6">AFINADOR DE VIOLÃO ONLINE</text>
+
+    <text x="80" y="278" fill="url(#title)" font-size="120" font-weight="800" letter-spacing="-2">TunaGuitar</text>
+    <rect x="86" y="300" width="120" height="6" rx="3" fill="#FF5555"/>
+
+    <text x="86" y="372" fill="#9490a0" font-size="40" font-weight="500">Afine pelo microfone — grátis</text>
+
+    <!-- Pills de recursos -->
+    <g>
+      <rect x="86" y="416" width="196" height="56" rx="28" fill="#ffffff" fill-opacity="0.05" stroke="#ffffff" stroke-opacity="0.12"/>
+      <text x="184" y="452" fill="#f0ebe0" font-size="25" font-weight="600" text-anchor="middle">Metrônomo</text>
+
+      <rect x="298" y="416" width="166" height="56" rx="28" fill="#ffffff" fill-opacity="0.05" stroke="#ffffff" stroke-opacity="0.12"/>
+      <text x="381" y="452" fill="#f0ebe0" font-size="25" font-weight="600" text-anchor="middle">Acordes</text>
+
+      <rect x="480" y="416" width="276" height="56" rx="28" fill="#ffffff" fill-opacity="0.05" stroke="#ffffff" stroke-opacity="0.12"/>
+      <text x="618" y="452" fill="#f0ebe0" font-size="25" font-weight="600" text-anchor="middle">Treino de Ouvido</text>
+    </g>
+
+    <!-- URL -->
+    <circle cx="92" cy="552" r="7" fill="#3dca7a"/>
+    <text x="110" y="561" fill="#f0ebe0" font-size="30" font-weight="700" letter-spacing="0.5">tuna-guitar.vercel.app</text>
+  </g>
+
+  <!-- Mostrador do afinador (direita) -->
+  <g>
+    <circle cx="958" cy="318" r="212" fill="url(#dial)" stroke="#ffffff" stroke-opacity="0.08" stroke-width="2"/>
+    <circle cx="958" cy="318" r="212" fill="none" stroke="#FF5555" stroke-opacity="0.10" stroke-width="2"/>
+
+    <!-- Leitura da nota -->
+    <text x="958" y="300" fill="#f0ebe0" font-family="Arial, Helvetica, sans-serif" font-size="150" font-weight="800" text-anchor="middle">E<tspan font-size="80" dy="0">2</tspan></text>
+    <text x="958" y="346" fill="#9490a0" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="500" text-anchor="middle" letter-spacing="2">82.4 Hz · A=440</text>
+
+    <!-- Arco do medidor -->
+    <path d="M 800 432 A 158 158 0 0 1 1116 432" fill="none" stroke="#2a2a33" stroke-width="14" stroke-linecap="round"/>
+    <!-- Zona afinada (verde) -->
+    <path d="M 925 277 A 158 158 0 0 1 991 277" fill="none" stroke="#3dca7a" stroke-width="14" stroke-linecap="round"/>
+
+    <!-- Marcações -->
+    <g stroke="#ffffff" stroke-opacity="0.22" stroke-width="3" stroke-linecap="round">
+      <line x1="821" y1="380" x2="804" y2="370"/>
+      <line x1="884" y1="328" x2="875" y2="311"/>
+      <line x1="958" y1="310" x2="958" y2="290"/>
+      <line x1="1032" y1="328" x2="1041" y2="311"/>
+      <line x1="1095" y1="380" x2="1112" y2="370"/>
+    </g>
+
+    <!-- Agulha (levemente baixa) -->
+    <line x1="958" y1="432" x2="932" y2="296" stroke="#FF5555" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="958" cy="432" r="15" fill="#FF5555"/>
+    <circle cx="958" cy="432" r="6" fill="#05050A"/>
+
+    <!-- Chip AFINADO -->
+    <rect x="903" y="460" width="110" height="36" rx="18" fill="#3dca7a" fill-opacity="0.16" stroke="#3dca7a" stroke-opacity="0.5"/>
+    <text x="958" y="485" fill="#3dca7a" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700" text-anchor="middle" letter-spacing="2">AFINADO</text>
+  </g>
+</svg>
