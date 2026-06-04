@@ -1,7 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Bar, Line } from "react-chartjs-2";
+import type { ScriptableContext, TooltipItem } from "chart.js";
+import "../lib/chartTheme";
 import { Download, Pause, Play, RotateCcw, Share2, Star, Upload } from "lucide-react";
 import { load, save } from "../lib/storage";
 import { useGamify } from "../context/GamifyContext";
+import SplitHeading from "../components/SplitHeading";
+import TiltCard from "../components/TiltCard";
+import Tip from "../components/Tip";
+import { toast } from "../lib/toast";
 
 interface Session {
   date: string;
@@ -43,7 +50,6 @@ export default function PracticePage() {
 
   const { track } = useGamify();
   const tick = useRef<number | undefined>(undefined);
-  const chartRef = useRef<HTMLCanvasElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -67,6 +73,7 @@ export default function PracticePage() {
       rating,
     };
     persist([s, ...sessions]);
+    toast.info(`💾 Sessão salva — ${minutes} min registrados.`);
     track("diaryLog");
     track("practiceMin", minutes);
     setSeconds(0);
@@ -132,53 +139,23 @@ export default function PracticePage() {
     return "#ff5555";
   };
 
-  // Gráfico de linha (Canvas puro) — minutos/dia nos últimos 30 dias.
-  useEffect(() => {
-    const cv = chartRef.current;
-    if (!cv) return;
-    const ctx = cv.getContext("2d");
-    if (!ctx) return;
-    const W = cv.width;
-    const H = cv.height;
-    ctx.clearRect(0, 0, W, H);
-
-    const days: number[] = [];
+  // Dados dos gráficos (Chart.js) — derivados apenas do que já existe em tg.practice.
+  const barData = useMemo(() => {
+    const labels: string[] = [];
+    const minutes: number[] = [];
     for (let i = 29; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
-      days.push(minutesByDay[dateKey(d)] || 0);
+      labels.push(`${d.getDate()}/${d.getMonth() + 1}`);
+      minutes.push(minutesByDay[dateKey(d)] || 0);
     }
-    const max = Math.max(30, ...days);
-    const pad = 24;
-    const plotW = W - pad * 2;
-    const plotH = H - pad * 2;
-    const x = (i: number) => pad + (i / 29) * plotW;
-    const y = (v: number) => pad + plotH - (v / max) * plotH;
-
-    ctx.strokeStyle = "#2a2a2a";
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(pad, H - pad);
-    ctx.lineTo(W - pad, H - pad);
-    ctx.stroke();
-
-    const grad = ctx.createLinearGradient(0, pad, 0, H - pad);
-    grad.addColorStop(0, "rgba(255,85,85,0.35)");
-    grad.addColorStop(1, "rgba(255,85,85,0)");
-    ctx.beginPath();
-    ctx.moveTo(x(0), H - pad);
-    days.forEach((v, i) => ctx.lineTo(x(i), y(v)));
-    ctx.lineTo(x(29), H - pad);
-    ctx.closePath();
-    ctx.fillStyle = grad;
-    ctx.fill();
-
-    ctx.beginPath();
-    days.forEach((v, i) => (i === 0 ? ctx.moveTo(x(i), y(v)) : ctx.lineTo(x(i), y(v))));
-    ctx.strokeStyle = "#ff5555";
-    ctx.lineWidth = 2;
-    ctx.stroke();
+    return { labels, minutes };
   }, [minutesByDay]);
+
+  const bpmData = useMemo(() => {
+    const withBpm = [...sessions].filter((s) => s.bpmEnd != null).reverse();
+    return { labels: withBpm.map((s) => s.date.slice(5)), values: withBpm.map((s) => s.bpmEnd as number) };
+  }, [sessions]);
 
   const totalHours = (totalMinutes / 60).toFixed(1);
   const monthName = new Date().toLocaleDateString("pt-BR", { month: "long" });
@@ -259,7 +236,7 @@ export default function PracticePage() {
 
   return (
     <div className="w-full max-w-4xl px-4 py-6 md:py-10">
-      <h1 className="mb-1 font-headline text-3xl font-bold text-primary md:text-4xl">Diário de Prática</h1>
+      <SplitHeading text="Diário de Prática" className="mb-1 font-headline text-3xl font-bold text-primary md:text-4xl" />
       <p className="mb-6 font-share-tech text-sm text-secondary">Registre e acompanhe sua evolução</p>
 
       {/* Timer + log */}
@@ -316,15 +293,19 @@ export default function PracticePage() {
           ["Recorde", `${record}`],
           ["Horas totais", totalHours],
         ].map(([k, v]) => (
-          <div key={k} className="rounded-xl border border-[#2a2a2a] bg-surface-lowest p-4 text-center">
+          <TiltCard
+            key={k}
+            options={{ max: 8, speed: 500, glare: true, "max-glare": 0.08, perspective: 800, scale: 1.02 }}
+            className="relative overflow-hidden rounded-xl border border-[#2a2a2a] bg-surface-lowest p-4 text-center"
+          >
             <div className="font-orbitron text-2xl text-accent">{v}</div>
             <div className="mt-1 font-label text-[10px] uppercase tracking-widest text-on-surface-variant">{k}</div>
-          </div>
+          </TiltCard>
         ))}
       </div>
 
       {/* Heatmap */}
-      <div className="mb-6 overflow-x-auto rounded-xl border border-[#2a2a2a] bg-surface-lowest p-4">
+      <div data-reveal className="mb-6 overflow-x-auto rounded-xl border border-[#2a2a2a] bg-surface-lowest p-4">
         <span className="mb-3 block font-label text-[11px] uppercase tracking-widest text-on-surface-variant">Atividade (18 semanas)</span>
         <div className="flex gap-1">
           {heatmap.map((col, ci) => (
@@ -337,26 +318,109 @@ export default function PracticePage() {
         </div>
       </div>
 
-      {/* Gráfico */}
-      <div className="mb-6 rounded-xl border border-[#2a2a2a] bg-surface-lowest p-4">
+      {/* Gráfico de minutos/dia (Chart.js) */}
+      <div data-reveal className="mb-6 rounded-xl border border-[#2a2a2a] bg-surface-lowest p-4">
         <span className="mb-3 block font-label text-[11px] uppercase tracking-widest text-on-surface-variant">Minutos/dia (30 dias)</span>
-        <canvas ref={chartRef} width={600} height={180} className="w-full" />
+        <div className="h-48">
+          <Bar
+            data={{
+              labels: barData.labels,
+              datasets: [
+                {
+                  data: barData.minutes,
+                  backgroundColor: (ctx: ScriptableContext<"bar">) => {
+                    const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 180);
+                    g.addColorStop(0, "rgba(255,85,85,0.85)");
+                    g.addColorStop(1, "rgba(255,85,85,0.08)");
+                    return g;
+                  },
+                  borderRadius: 4,
+                  borderSkipped: false,
+                  hoverBackgroundColor: "#FF5555",
+                },
+              ],
+            }}
+            options={{
+              responsive: true,
+              maintainAspectRatio: false,
+              animations: { colors: false }, // gradiente (CanvasGradient) não é interpolável
+              scales: {
+                x: { grid: { display: false }, border: { display: false } },
+                y: { beginAtZero: true, grid: { color: "rgba(255,255,255,0.04)" }, border: { display: false }, ticks: { padding: 8 } },
+              },
+              plugins: {
+                tooltip: {
+                  callbacks: {
+                    title: (items: TooltipItem<"bar">[]) => items[0].label,
+                    label: (item: TooltipItem<"bar">) => `${item.formattedValue} min`,
+                  },
+                },
+              },
+            }}
+          />
+        </div>
       </div>
+
+      {/* Evolução de BPM por sessão (Chart.js) */}
+      {bpmData.values.length >= 2 && (
+        <div data-reveal className="mb-6 rounded-xl border border-[#2a2a2a] bg-surface-lowest p-4">
+          <span className="mb-3 block font-label text-[11px] uppercase tracking-widest text-on-surface-variant">Evolução de BPM (por sessão registrada)</span>
+          <div className="h-44">
+            <Line
+              data={{
+                labels: bpmData.labels,
+                datasets: [
+                  {
+                    data: bpmData.values,
+                    borderColor: "#F5A623",
+                    borderWidth: 2,
+                    backgroundColor: (ctx: ScriptableContext<"line">) => {
+                      const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 120);
+                      g.addColorStop(0, "rgba(245,166,35,0.2)");
+                      g.addColorStop(1, "rgba(245,166,35,0)");
+                      return g;
+                    },
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointBackgroundColor: "#F5A623",
+                    pointHoverRadius: 7,
+                  },
+                ],
+              }}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                  x: { grid: { display: false }, border: { display: false } },
+                  y: { grid: { color: "rgba(255,255,255,0.04)" }, border: { display: false } },
+                },
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Export/share */}
       <div className="flex flex-wrap gap-2">
-        <button onClick={exportPng} className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-3 py-2 font-label text-[11px] uppercase tracking-widest text-accent">
-          <Download className="h-4 w-4" /> Card PNG
-        </button>
+        <Tip content="Baixar card de progresso como imagem (PNG)">
+          <button onClick={exportPng} className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-3 py-2 font-label text-[11px] uppercase tracking-widest text-accent">
+            <Download className="h-4 w-4" /> Card PNG
+          </button>
+        </Tip>
         <button onClick={copyText} className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-[#333] px-3 py-2 font-label text-[11px] uppercase tracking-widest text-on-surface-variant hover:text-primary">
           <Share2 className="h-4 w-4" /> {copied ? "Copiado!" : "Copiar texto"}
         </button>
-        <button onClick={exportJson} className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-[#333] px-3 py-2 font-label text-[11px] uppercase tracking-widest text-on-surface-variant hover:text-primary">
-          <Download className="h-4 w-4" /> JSON
-        </button>
-        <button onClick={() => fileRef.current?.click()} className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-[#333] px-3 py-2 font-label text-[11px] uppercase tracking-widest text-on-surface-variant hover:text-primary">
-          <Upload className="h-4 w-4" /> Importar
-        </button>
+        <Tip content="Baixar o diário como JSON">
+          <button onClick={exportJson} className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-[#333] px-3 py-2 font-label text-[11px] uppercase tracking-widest text-on-surface-variant hover:text-primary">
+            <Download className="h-4 w-4" /> JSON
+          </button>
+        </Tip>
+        <Tip content="Restaurar diário a partir de um arquivo JSON">
+          <button onClick={() => fileRef.current?.click()} className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-[#333] px-3 py-2 font-label text-[11px] uppercase tracking-widest text-on-surface-variant hover:text-primary">
+            <Upload className="h-4 w-4" /> Importar
+          </button>
+        </Tip>
         <input ref={fileRef} type="file" accept="application/json" className="hidden" onChange={(e) => e.target.files?.[0] && importJson(e.target.files[0])} />
       </div>
 

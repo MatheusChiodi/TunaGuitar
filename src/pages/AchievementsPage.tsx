@@ -1,13 +1,46 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
+import gsap from "gsap";
 import { BookOpen, Download, Ear, Flame, Guitar, Lock, Mic, Music2, Share2, Trophy, Zap } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { useState } from "react";
 import { useGamify } from "../context/GamifyContext";
 import { useSettings } from "../context/SettingsContext";
 import { ACHIEVEMENTS, levelFromXp, MISSIONS } from "../lib/gamification";
-import { load } from "../lib/storage";
+import { load, save } from "../lib/storage";
+import { motionAllowed } from "../lib/anim";
+import SplitHeading from "../components/SplitHeading";
+import TiltCard from "../components/TiltCard";
+import Tip from "../components/Tip";
 
 const ICONS: Record<string, LucideIcon> = { guitar: Guitar, flame: Flame, zap: Zap, ear: Ear, book: BookOpen, music: Music2, mic: Mic, trophy: Trophy };
+
+/** Celebração GSAP ao desbloquear: pulso elástico + burst de partículas. */
+function celebrate(el: HTMLElement) {
+  if (!motionAllowed()) return;
+  gsap
+    .timeline()
+    .to(el, { scale: 1.5, duration: 0.15, ease: "power3.out" })
+    .to(el, { scale: 0.9, duration: 0.1 })
+    .to(el, { scale: 1.1, duration: 0.08 })
+    .to(el, { scale: 1, duration: 0.4, ease: "elastic.out(1.2, 0.5)" });
+  for (let i = 0; i < 8; i++) {
+    const dot = document.createElement("div");
+    dot.className = "achievement-particle";
+    el.appendChild(dot);
+    gsap.fromTo(
+      dot,
+      { x: 0, y: 0, opacity: 1, scale: 1 },
+      {
+        x: (Math.random() - 0.5) * 80,
+        y: (Math.random() - 0.5) * 80,
+        opacity: 0,
+        scale: 0,
+        duration: 0.7 + Math.random() * 0.4,
+        ease: "power2.out",
+        onComplete: () => dot.remove(),
+      },
+    );
+  }
+}
 
 function pad(n: number) {
   return String(n).padStart(2, "0");
@@ -39,8 +72,24 @@ export default function AchievementsPage() {
   const { state, refresh } = useGamify();
   const { profile } = useSettings();
   const [copied, setCopied] = useState(false);
+  const burstRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   useEffect(() => refresh(), [refresh]);
+
+  // Dispara a celebração para conquistas ainda não "vistas" nesta página.
+  useEffect(() => {
+    const seen = load<string[]>("tg.seenAch", []);
+    const fresh = state.unlocked.filter((id) => !seen.includes(id));
+    if (fresh.length) {
+      requestAnimationFrame(() =>
+        fresh.forEach((id) => {
+          const el = burstRefs.current[id];
+          if (el) celebrate(el);
+        }),
+      );
+    }
+    if (fresh.length || seen.length !== state.unlocked.length) save("tg.seenAch", state.unlocked);
+  }, [state.unlocked]);
 
   const lvl = levelFromXp(state.xp);
   const streak = practiceStreak();
@@ -105,7 +154,7 @@ export default function AchievementsPage() {
 
   return (
     <div className="w-full max-w-3xl px-4 py-6 md:py-10">
-      <h1 className="mb-1 font-headline text-3xl font-bold text-primary md:text-4xl">Conquistas</h1>
+      <SplitHeading text="Conquistas" className="mb-1 font-headline text-3xl font-bold text-primary md:text-4xl" />
       <p className="mb-6 font-share-tech text-sm text-secondary">Missões, badges e progresso</p>
 
       {/* Ranking */}
@@ -135,7 +184,7 @@ export default function AchievementsPage() {
 
       {/* Missões diárias */}
       <h2 className="mb-3 font-headline text-xl text-on-surface">Missões diárias</h2>
-      <div className="mb-6 flex flex-col gap-2">
+      <div data-reveal className="mb-6 flex flex-col gap-2">
         {MISSIONS.map((m) => {
           const count = Math.min(state.daily.counts[m.event] ?? 0, m.target);
           const done = state.daily.awarded.includes(m.id);
@@ -156,26 +205,38 @@ export default function AchievementsPage() {
 
       {/* Badges */}
       <h2 className="mb-3 font-headline text-xl text-on-surface">Conquistas</h2>
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div data-reveal className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {ACHIEVEMENTS.map((a) => {
           const Icon = ICONS[a.icon] ?? Trophy;
           const unlocked = state.unlocked.includes(a.id);
           return (
-            <div key={a.id} className={`relative flex flex-col items-center rounded-xl border p-4 text-center ${unlocked ? "border-accent/40 bg-accent/5" : "border-[#222] bg-surface-lowest"}`}>
-              <Icon className={`mb-2 h-8 w-8 ${unlocked ? "text-accent" : "text-[#444]"}`} />
+            <TiltCard
+              key={a.id}
+              options={{ max: 15, speed: 400, glare: true, "max-glare": 0.15, perspective: 600, scale: 1.05, gyroscope: true }}
+              className={`relative flex flex-col items-center overflow-hidden rounded-xl border p-4 text-center ${unlocked ? "border-accent/40 bg-accent/5" : "border-[#222] bg-surface-lowest"}`}
+            >
+              <div ref={(el) => { burstRefs.current[a.id] = el; }} className="relative mb-2">
+                <Icon className={`h-8 w-8 ${unlocked ? "text-accent" : "text-[#444]"}`} />
+              </div>
               <span className={`font-headline text-xs ${unlocked ? "text-on-surface" : "text-on-surface-variant"}`}>{a.name}</span>
               <span className="mt-1 font-share-tech text-[9px] text-tertiary">{a.desc}</span>
-              {!unlocked && <Lock className="absolute right-2 top-2 h-3.5 w-3.5 text-[#444]" />}
-            </div>
+              {!unlocked && (
+                <Tip content={`Para desbloquear: ${a.desc}`}>
+                  <Lock className="absolute right-2 top-2 h-3.5 w-3.5 text-[#444]" />
+                </Tip>
+              )}
+            </TiltCard>
           );
         })}
       </div>
 
       {/* Card de perfil */}
       <div className="flex flex-wrap gap-2">
-        <button onClick={exportCard} className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-3 py-2 font-label text-[11px] uppercase tracking-widest text-accent">
-          <Download className="h-4 w-4" /> Card de perfil (PNG)
-        </button>
+        <Tip content="Baixar card de perfil como imagem (PNG)">
+          <button onClick={exportCard} className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-3 py-2 font-label text-[11px] uppercase tracking-widest text-accent">
+            <Download className="h-4 w-4" /> Card de perfil (PNG)
+          </button>
+        </Tip>
         <button onClick={copyText} className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-[#333] px-3 py-2 font-label text-[11px] uppercase tracking-widest text-on-surface-variant hover:text-primary">
           <Share2 className="h-4 w-4" /> {copied ? "Copiado!" : "Copiar texto"}
         </button>

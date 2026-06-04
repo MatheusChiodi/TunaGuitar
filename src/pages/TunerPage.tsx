@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, type Variants } from "framer-motion";
 import { AlertTriangle, ArrowDown, ArrowUp, Check, Music } from "lucide-react";
 import TunerDisplay from "../components/TunerDisplay";
@@ -8,6 +8,7 @@ import { usePitchDetection } from "../hooks/usePitchDetection";
 import { centsOff, getTuning, midiFromFrequency, nearestStringIndex, noteFromMidi, type TuneStatus } from "../lib/pitch";
 import { useSettings } from "../context/SettingsContext";
 import { useGamify } from "../context/GamifyContext";
+import { toast } from "../lib/toast";
 
 const pedalVariants: Variants = {
   hidden: {},
@@ -74,6 +75,20 @@ export default function TunerPage() {
     }
   }, [mode, active, frequency, a4, strings]);
 
+  // Toast ao entrar na zona verde (afinado).
+  const prevStatus = useRef<TuneStatus>("idle");
+  useEffect(() => {
+    if (active && status === "tuned" && prevStatus.current !== "tuned") {
+      toast.tuned(`🎸 ${targetNote.note}${targetNote.octave} afinada!`);
+    }
+    prevStatus.current = status;
+  }, [status, active, targetNote.note, targetNote.octave]);
+
+  // Toast em erro de microfone.
+  useEffect(() => {
+    if (error) toast.warning(`⚠️ ${error}`);
+  }, [error]);
+
   const handleSelectString = (i: number) => {
     setMode("manual");
     setSelected(i);
@@ -84,6 +99,7 @@ export default function TunerPage() {
       variants={pedalVariants}
       initial="hidden"
       animate="show"
+      data-tour="tuner"
       className="relative flex w-full flex-1 cursor-default touch-manipulation select-none flex-col overflow-hidden border-y border-x-0 border-[#333] bg-pedal-chassis shadow-2xl md:mb-8 md:mt-2 md:max-w-120 md:flex-none md:rounded-xl md:border-2"
     >
       <div className="bg-brushed-metal pointer-events-none absolute inset-0 opacity-30" />
@@ -115,7 +131,7 @@ export default function TunerPage() {
           active={active}
         />
         <StatusBar status={status} error={error} />
-        <StringSelector strings={strings} selected={stringIndex} onSelect={handleSelectString} />
+        <StringSelector strings={strings} selected={stringIndex} onSelect={handleSelectString} a4={a4} />
       </motion.section>
 
       <motion.div variants={block}>

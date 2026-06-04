@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Power } from "lucide-react";
+import Magnetic from "./Magnetic";
 
 type Mode = "auto" | "manual";
 
@@ -62,8 +63,10 @@ export default function Controls({ a4, onA4Change, mode, onModeChange, listening
 
       {/* Botão stomp */}
       <div className="mt-2 flex justify-center">
+        <Magnetic strength={0.18}>
         <motion.button
           onClick={onToggle}
+          data-tour="power"
           whileTap={{ scale: 0.94, y: 4 }}
           className="group relative flex h-32 w-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-full border-4 border-[#222] bg-[radial-gradient(circle,#333_0%,#1a1a1a_100%)] shadow-[0_8px_15px_rgba(0,0,0,0.6),inset_0_2px_5px_rgba(255,255,255,0.2)]"
         >
@@ -84,6 +87,7 @@ export default function Controls({ a4, onA4Change, mode, onModeChange, listening
             )}
           </span>
         </motion.button>
+        </Magnetic>
       </div>
     </section>
   );

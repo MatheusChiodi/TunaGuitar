@@ -1,12 +1,15 @@
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Printer, Save, Search, Trash2, Volume2, X } from "lucide-react";
+import { GripVertical, Printer, Save, Search, Trash2, Volume2, X } from "lucide-react";
 import ChordDiagram from "../components/ChordDiagram";
 import { getChordBySymbol, voicingMidis } from "../lib/chords";
 import { isChordToken, parseChord, transposeChord } from "../lib/theory";
 import { audio } from "../lib/audio";
 import { load, save } from "../lib/storage";
 import { useGamify } from "../context/GamifyContext";
+import { useSortableList } from "../hooks/useSortableList";
+import SplitHeading from "../components/SplitHeading";
+import { toast } from "../lib/toast";
 
 interface Cifra {
   id: string;
@@ -77,6 +80,7 @@ export default function CifradorPage() {
       date: new Date().toLocaleDateString("pt-BR"),
     };
     persist([c, ...cifras]);
+    toast.info(`🎵 Cifra "${c.title}" salva.`);
   };
 
   const formatText = () =>
@@ -92,9 +96,21 @@ export default function CifradorPage() {
 
   const filtered = cifras.filter((c) => `${c.title} ${c.artist}`.toLowerCase().includes(query.toLowerCase()));
 
+  // Reordenar = ordem do setlist no Modo Performance (lê tg.cifras na ordem). Só com busca vazia.
+  const setlistRef = useSortableList<HTMLDivElement>(
+    (oldIndex, newIndex) => {
+      const next = [...cifras];
+      const [moved] = next.splice(oldIndex, 1);
+      next.splice(newIndex, 0, moved);
+      persist(next);
+      toast.info("📋 Ordem do setlist atualizada.");
+    },
+    query === "",
+  );
+
   return (
     <div className="w-full max-w-5xl px-4 py-6 md:py-10">
-      <h1 className="mb-1 font-headline text-3xl font-bold text-primary md:text-4xl">Cifrador</h1>
+      <SplitHeading text="Cifrador" className="mb-1 font-headline text-3xl font-bold text-primary md:text-4xl" />
       <p className="mb-6 font-share-tech text-sm text-secondary">Editor de cifras com transposição e diagramas</p>
 
       {/* Metadados */}
@@ -169,13 +185,17 @@ export default function CifradorPage() {
             <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar…" className="rounded-lg border border-[#2a2a2a] bg-surface-lowest py-1.5 pl-8 pr-3 font-share-tech text-sm text-on-surface outline-none focus:border-accent" />
           </div>
         </div>
+        {!query && filtered.length > 1 && (
+          <p className="mb-2 font-share-tech text-[11px] text-tertiary">Arraste pelo punho ⠿ para reordenar — define a ordem do setlist no Modo Performance.</p>
+        )}
         {filtered.length === 0 ? (
           <p className="font-share-tech text-sm text-on-surface-variant">Nenhuma cifra salva.</p>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          <div ref={setlistRef} className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {filtered.map((c) => (
-              <div key={c.id} className="rounded-xl border border-[#2a2a2a] bg-surface-lowest p-3">
-                <button onClick={() => { setText(c.text); setTitle(c.title); setArtist(c.artist); setSongKey(c.key); setBpm(c.bpm); setSemis(0); }} className="cursor-pointer text-left">
+              <div key={c.id} data-id={c.id} className="relative rounded-xl border border-[#2a2a2a] bg-surface-lowest p-3">
+                {!query && <GripVertical className="drag-handle absolute right-2 top-2 h-4 w-4" />}
+                <button onClick={() => { setText(c.text); setTitle(c.title); setArtist(c.artist); setSongKey(c.key); setBpm(c.bpm); setSemis(0); }} className="cursor-pointer pr-5 text-left">
                   <p className="font-headline text-sm text-on-surface">{c.title}</p>
                   <p className="font-share-tech text-xs text-on-surface-variant">{c.artist || "—"}</p>
                   <p className="mt-1 font-share-tech text-[10px] text-tertiary">{c.key} · {c.bpm} BPM · {c.date}</p>

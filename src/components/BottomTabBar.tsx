@@ -12,7 +12,7 @@ export default function BottomTabBar() {
   const { lang } = useSettings();
 
   return (
-    <nav className="no-print no-scrollbar fixed bottom-0 left-0 z-50 flex w-full items-stretch overflow-x-auto border-t border-outline-variant bg-linear-to-t from-surface-bright to-surface pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_rgba(0,0,0,0.55)] md:hidden">
+    <nav data-tour="nav-mobile" className="no-print no-scrollbar fixed bottom-0 left-0 z-50 flex w-full items-stretch overflow-x-auto border-t border-outline-variant bg-linear-to-t from-surface-bright to-surface pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_rgba(0,0,0,0.55)] md:hidden">
       {NAV.map((tab) => (
         <NavLink
           key={tab.to}

@@ -1,6 +1,9 @@
 import { useState } from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Info } from "lucide-react";
 import { NOTE_NAMES, pcName } from "../lib/theory";
+import SplitHeading from "../components/SplitHeading";
+import TiltCard from "../components/TiltCard";
+import Tip from "../components/Tip";
 
 interface Shape {
   label: string;
@@ -44,7 +47,7 @@ export default function CapoPage() {
 
   return (
     <div className="w-full max-w-4xl px-4 py-6 md:py-10">
-      <h1 className="mb-1 font-headline text-3xl font-bold text-primary md:text-4xl">Capotraste</h1>
+      <SplitHeading text="Capotraste" className="mb-1 font-headline text-3xl font-bold text-primary md:text-4xl" />
       <p className="mb-6 font-share-tech text-sm text-secondary">Transponha tonalidades sem aprender acordes novos</p>
 
       {/* Calculadora direta */}
@@ -73,7 +76,13 @@ export default function CapoPage() {
           </div>
         </div>
 
-        <div className="mt-5 rounded-lg border border-accent/40 bg-accent/5 p-4 text-center">
+        <TiltCard
+          options={{ max: 12, speed: 350, glare: true, "max-glare": 0.12, perspective: 600, scale: 1.03 }}
+          className="relative mt-5 overflow-hidden rounded-lg border border-accent/40 bg-accent/5 p-4 text-center"
+        >
+          <Tip content="Toque os acordes abertos como se estivessem nesta posição do braço.">
+            <Info className="absolute right-2 top-2 h-4 w-4 text-on-surface-variant" />
+          </Tip>
           {capo === 0 ? (
             <p className="font-share-tech text-lg text-on-surface">
               Sem capotraste — toque <span className="text-accent">{orig.label}</span> normalmente.
@@ -88,13 +97,13 @@ export default function CapoPage() {
               soa <span className="text-secondary">{sounding}</span>.
             </p>
           )}
-        </div>
+        </TiltCard>
       </div>
 
       {/* Tabela de transposição */}
       <h2 className="mb-3 font-headline text-xl text-on-surface">Tabela de transposição</h2>
       <p className="mb-3 font-share-tech text-xs text-tertiary">Destaque = tonalidades difíceis de tocar abertas (o capo facilita).</p>
-      <div className="mb-8 overflow-x-auto rounded-xl border border-[#2a2a2a]">
+      <div data-reveal className="mb-8 overflow-x-auto rounded-xl border border-[#2a2a2a]">
         <table className="w-full border-collapse text-center font-share-tech text-sm">
           <thead>
             <tr className="bg-surface-lowest">
@@ -131,7 +140,7 @@ export default function CapoPage() {
 
       {/* Modo inverso */}
       <h2 className="mb-3 font-headline text-xl text-on-surface">Modo inverso</h2>
-      <div className="rounded-xl border border-[#2a2a2a] bg-surface-lowest p-5">
+      <div data-reveal className="rounded-xl border border-[#2a2a2a] bg-surface-lowest p-5">
         <div className="mb-4 flex flex-wrap items-end gap-4">
           <div>
             <label className="mb-1 block font-label text-[11px] uppercase tracking-widest text-on-surface-variant">Quero tocar em</label>

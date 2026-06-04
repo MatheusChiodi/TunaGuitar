@@ -1,10 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
+import { Radar } from "react-chartjs-2";
+import "../lib/chartTheme";
 import { Check, Flame, Play, Share2, X } from "lucide-react";
 import { audio } from "../lib/audio";
 import { CHORD_QUALITIES, INTERVALS, NOTE_NAMES, pcName } from "../lib/theory";
 import { load, save } from "../lib/storage";
 import { useGamify } from "../context/GamifyContext";
+import SplitHeading from "../components/SplitHeading";
 
 type Mode = "note" | "interval" | "chord";
 
@@ -82,9 +85,26 @@ export default function EarTrainingPage() {
   const [best, setBest] = useState(0);
   const [store, setStore] = useState<Stored>(() => load("tg.ear", { xp: 0, history: [] }));
   const [copied, setCopied] = useState(false);
-  const { track } = useGamify();
+  const { track, state: gamify } = useGamify();
 
   useEffect(() => save("tg.ear", store), [store]);
+
+  // Radar de habilidades — derivado do histórico + contadores de gamificação (sem novo schema).
+  const radar = useMemo(() => {
+    const acc = (m: Mode) => {
+      const hs = store.history.filter((h) => h.mode === m);
+      return hs.length ? Math.round((hs.filter((h) => h.correct).length / hs.length) * 100) : 0;
+    };
+    const c = gamify.counters;
+    return [
+      acc("note"),
+      acc("interval"),
+      acc("chord"),
+      Math.min(100, (c.tune ?? 0) * 12),
+      Math.min(100, (c.fastBpm ?? 0) * 25),
+      (c.theoryComplete ?? 0) > 0 ? 100 : 0,
+    ];
+  }, [store.history, gamify.counters]);
 
   const revealed = selected !== null;
   const correct = revealed && selected === q.answer;
@@ -149,7 +169,7 @@ export default function EarTrainingPage() {
 
   return (
     <div className="w-full max-w-2xl px-4 py-6 md:py-10">
-      <h1 className="mb-1 font-headline text-3xl font-bold text-primary md:text-4xl">Treino de Ouvido</h1>
+      <SplitHeading text="Treino de Ouvido" className="mb-1 font-headline text-3xl font-bold text-primary md:text-4xl" />
       <p className="mb-6 font-share-tech text-sm text-secondary">Reconheça notas, intervalos e acordes</p>
 
       {/* Progresso */}
@@ -252,6 +272,44 @@ export default function EarTrainingPage() {
           </div>
         </div>
       )}
+
+      {/* Mapa de habilidades (Chart.js) */}
+      <div data-reveal className="mt-8 rounded-xl border border-[#2a2a2a] bg-surface-lowest p-4">
+        <span className="mb-3 block font-label text-[11px] uppercase tracking-widest text-on-surface-variant">Mapa de habilidades</span>
+        <div className="mx-auto h-64 max-w-sm">
+          <Radar
+            data={{
+              labels: ["Notas", "Intervalos", "Acordes", "Afinação", "Ritmo", "Teoria"],
+              datasets: [
+                {
+                  data: radar,
+                  backgroundColor: "rgba(255,85,85,0.1)",
+                  borderColor: "#FF5555",
+                  borderWidth: 2,
+                  pointBackgroundColor: "#FF5555",
+                  pointRadius: 4,
+                  pointHoverRadius: 6,
+                  pointBorderColor: "transparent",
+                },
+              ],
+            }}
+            options={{
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                r: {
+                  min: 0,
+                  max: 100,
+                  ticks: { display: false, stepSize: 25 },
+                  grid: { color: "rgba(255,255,255,0.06)" },
+                  angleLines: { color: "rgba(255,255,255,0.04)" },
+                  pointLabels: { font: { family: "'Syne', sans-serif", size: 12, weight: 600 }, color: "#9490A0" },
+                },
+              },
+            }}
+          />
+        </div>
+      </div>
     </div>
   );
 }

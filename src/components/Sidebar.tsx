@@ -34,7 +34,7 @@ export default function Sidebar() {
         </button>
       </div>
 
-      <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-2">
+      <nav data-tour="nav-desktop" className="flex flex-1 flex-col gap-1 overflow-y-auto p-2">
         {NAV.map((item) => (
           <NavLink
             key={item.to}

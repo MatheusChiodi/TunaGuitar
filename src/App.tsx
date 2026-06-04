@@ -1,26 +1,38 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { MotionConfig } from "framer-motion";
 import { SettingsProvider, useSettings } from "./context/SettingsContext";
 import { GamifyProvider } from "./context/GamifyContext";
+import ParticlesBg from "./components/ParticlesBg";
 import Layout from "./components/Layout";
 import TunerPage from "./pages/TunerPage";
-import MetronomePage from "./pages/MetronomePage";
-import ChordsPage from "./pages/ChordsPage";
-import EarTrainingPage from "./pages/EarTrainingPage";
-import ScalesPage from "./pages/ScalesPage";
-import CapoPage from "./pages/CapoPage";
-import PracticePage from "./pages/PracticePage";
-import TheoryPage from "./pages/TheoryPage";
-import ManualPage from "./pages/ManualPage";
-import PrivacyPage from "./pages/PrivacyPage";
-import TermsPage from "./pages/TermsPage";
-import CifradorPage from "./pages/CifradorPage";
-import LoopStationPage from "./pages/LoopStationPage";
-import ProgressionPage from "./pages/ProgressionPage";
-import RhythmPage from "./pages/RhythmPage";
-import AchievementsPage from "./pages/AchievementsPage";
-import PerformancePage from "./pages/PerformancePage";
-import ConfigPage from "./pages/ConfigPage";
+
+// Páginas carregadas sob demanda — Chart.js/áudio pesado fica fora do bundle inicial.
+const MetronomePage = lazy(() => import("./pages/MetronomePage"));
+const ChordsPage = lazy(() => import("./pages/ChordsPage"));
+const EarTrainingPage = lazy(() => import("./pages/EarTrainingPage"));
+const ScalesPage = lazy(() => import("./pages/ScalesPage"));
+const CapoPage = lazy(() => import("./pages/CapoPage"));
+const PracticePage = lazy(() => import("./pages/PracticePage"));
+const TheoryPage = lazy(() => import("./pages/TheoryPage"));
+const ManualPage = lazy(() => import("./pages/ManualPage"));
+const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
+const TermsPage = lazy(() => import("./pages/TermsPage"));
+const CifradorPage = lazy(() => import("./pages/CifradorPage"));
+const LoopStationPage = lazy(() => import("./pages/LoopStationPage"));
+const ProgressionPage = lazy(() => import("./pages/ProgressionPage"));
+const RhythmPage = lazy(() => import("./pages/RhythmPage"));
+const AchievementsPage = lazy(() => import("./pages/AchievementsPage"));
+const PerformancePage = lazy(() => import("./pages/PerformancePage"));
+const ConfigPage = lazy(() => import("./pages/ConfigPage"));
+
+function Fallback() {
+  return (
+    <div className="flex min-h-dvh w-full flex-1 items-center justify-center">
+      <span className="font-label text-xs uppercase tracking-widest text-on-surface-variant">Carregando…</span>
+    </div>
+  );
+}
 
 function Router() {
   const { animations } = useSettings();
@@ -28,7 +40,14 @@ function Router() {
     <MotionConfig reducedMotion={animations === "all" ? "never" : "always"}>
       <BrowserRouter>
         <Routes>
-          <Route path="/performance" element={<PerformancePage />} />
+          <Route
+            path="/performance"
+            element={
+              <Suspense fallback={<Fallback />}>
+                <PerformancePage />
+              </Suspense>
+            }
+          />
           <Route element={<Layout />}>
             <Route index element={<TunerPage />} />
             <Route path="metronomo" element={<MetronomePage />} />
@@ -58,6 +77,7 @@ export default function App() {
   return (
     <SettingsProvider>
       <GamifyProvider>
+        <ParticlesBg />
         <Router />
       </GamifyProvider>
     </SettingsProvider>

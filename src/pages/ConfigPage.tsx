@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { AlertTriangle, Download, Mic, Upload } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { AlertTriangle, Compass, Download, Mic, Upload } from "lucide-react";
 import { useSettings, type Animations, type Density, type Experience, type GuitarType } from "../context/SettingsContext";
 import { audio } from "../lib/audio";
 import { t } from "../lib/i18n";
 import type { Lang } from "../lib/i18n";
+import { resetTour } from "../lib/tour";
+import SplitHeading from "../components/SplitHeading";
 
 const ACCENTS = [
   { name: "Vermelho", hex: "#ff5555" },
@@ -39,7 +42,7 @@ const label = "font-label text-[11px] uppercase tracking-widest text-on-surface-
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className={`${panel} mb-4`}>
+    <section data-reveal className={`${panel} mb-4`}>
       <h2 className="mb-4 font-headline text-lg text-accent">{title}</h2>
       {children}
     </section>
@@ -48,6 +51,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 export default function ConfigPage() {
   const s = useSettings();
+  const navigate = useNavigate();
   const [testing, setTesting] = useState(false);
   const [micLevel, setMicLevel] = useState(0);
   const [confirm, setConfirm] = useState(0);
@@ -142,7 +146,7 @@ export default function ConfigPage() {
 
   return (
     <div className="w-full max-w-3xl px-4 py-6 md:py-10">
-      <h1 className="mb-6 font-headline text-3xl font-bold text-primary md:text-4xl">{t(lang, "config.title")}</h1>
+      <SplitHeading text={t(lang, "config.title")} className="mb-6 font-headline text-3xl font-bold text-primary md:text-4xl" />
 
       {/* Perfil */}
       <Section title={t(lang, "config.profile")}>
@@ -285,7 +289,12 @@ export default function ConfigPage() {
       <Section title={t(lang, "config.about")}>
         <p className="font-share-tech text-sm text-on-surface-variant">TunaGuitar v2.0 · build 2026-06-04</p>
         <p className="mt-2 font-share-tech text-xs text-tertiary">Web Audio API · Canvas · MediaRecorder · Fullscreen API · SVG · localStorage · React + Vite + Tailwind.</p>
-        <button onClick={() => window.open("https://github.com", "_blank")} className="mt-3 cursor-pointer rounded-lg border border-[#333] px-3 py-2 font-label text-[10px] uppercase tracking-widest text-on-surface-variant hover:text-primary">Verificar atualizações</button>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button onClick={() => { resetTour(); navigate("/"); }} className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-3 py-2 font-label text-[10px] uppercase tracking-widest text-accent">
+            <Compass className="h-4 w-4" /> Refazer tour de boas-vindas
+          </button>
+          <button onClick={() => window.open("https://github.com", "_blank")} className="cursor-pointer rounded-lg border border-[#333] px-3 py-2 font-label text-[10px] uppercase tracking-widest text-on-surface-variant hover:text-primary">Verificar atualizações</button>
+        </div>
         <p className="mt-3 font-share-tech text-[11px] text-tertiary">Feito para guitarristas · uso pessoal/educacional.</p>
       </Section>
 

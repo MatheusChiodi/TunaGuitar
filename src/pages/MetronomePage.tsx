@@ -4,6 +4,9 @@ import { Minus, Play, Plus, Square } from "lucide-react";
 import { SUBDIVISIONS, TIME_SIGNATURES, tempoName, useMetronome } from "../hooks/useMetronome";
 import type { ClickType } from "../lib/audio";
 import { useGamify } from "../context/GamifyContext";
+import SplitHeading from "../components/SplitHeading";
+import Tip from "../components/Tip";
+import Magnetic from "../components/Magnetic";
 
 const CLICKS: { id: ClickType; name: string }[] = [
   { id: "wood", name: "Madeira" },
@@ -39,7 +42,7 @@ export default function MetronomePage() {
 
   return (
     <div className="w-full max-w-2xl px-4 py-6 md:py-10">
-      <h1 className="mb-1 font-headline text-3xl font-bold text-primary md:text-4xl">Metrônomo</h1>
+      <SplitHeading text="Metrônomo" className="mb-1 font-headline text-3xl font-bold text-primary md:text-4xl" />
       <p className="mb-6 font-share-tech text-sm text-secondary">{tempoName(m.bpm)} · {m.timeSig}</p>
 
       {/* Visual */}
@@ -76,13 +79,14 @@ export default function MetronomePage() {
               className="w-40 bg-transparent text-center font-orbitron text-6xl text-accent outline-none"
             />
           ) : (
-            <span
-              onDoubleClick={() => setEditing(true)}
-              title="Duplo clique para editar"
-              className="cursor-text select-none font-orbitron text-7xl leading-none text-accent"
-            >
-              {m.bpm}
-            </span>
+            <Tip content="Duplo clique para editar">
+              <span
+                onDoubleClick={() => setEditing(true)}
+                className="cursor-text select-none font-orbitron text-7xl leading-none text-accent"
+              >
+                {m.bpm}
+              </span>
+            </Tip>
           )}
           <button onClick={() => m.setBpm(Math.min(300, m.bpm + 1))} className="cursor-pointer rounded-full border border-[#333] p-2 text-on-surface-variant hover:text-primary">
             <Plus className="h-5 w-5" />
@@ -122,15 +126,17 @@ export default function MetronomePage() {
         </div>
 
         {/* Play/Stop */}
-        <motion.button
-          onClick={m.toggle}
-          whileTap={{ scale: 0.92 }}
-          className={`flex h-20 w-20 cursor-pointer items-center justify-center rounded-full border-4 transition-colors ${
-            m.isPlaying ? "border-accent bg-accent/20 text-accent" : "border-[#333] bg-[radial-gradient(circle,#333,#1a1a1a)] text-on-surface"
-          }`}
-        >
-          {m.isPlaying ? <Square className="h-7 w-7 fill-current" /> : <Play className="ml-1 h-8 w-8 fill-current" />}
-        </motion.button>
+        <Magnetic strength={0.2}>
+          <motion.button
+            onClick={m.toggle}
+            whileTap={{ scale: 0.92 }}
+            className={`flex h-20 w-20 cursor-pointer items-center justify-center rounded-full border-4 transition-colors ${
+              m.isPlaying ? "border-accent bg-accent/20 text-accent" : "border-[#333] bg-[radial-gradient(circle,#333,#1a1a1a)] text-on-surface"
+            }`}
+          >
+            {m.isPlaying ? <Square className="h-7 w-7 fill-current" /> : <Play className="ml-1 h-8 w-8 fill-current" />}
+          </motion.button>
+        </Magnetic>
       </div>
 
       {/* Controles */}
@@ -138,9 +144,11 @@ export default function MetronomePage() {
         <div className={panel}>
           <div className="mb-2 flex items-center justify-between">
             <span className={label}>Tempo</span>
-            <button onClick={m.tap} className="cursor-pointer rounded-lg border border-accent/50 bg-accent/10 px-3 py-1 font-label text-xs uppercase tracking-widest text-accent">
-              Tap
-            </button>
+            <Tip content="Toque 4 vezes no ritmo para calcular o BPM">
+              <button onClick={m.tap} className="cursor-pointer rounded-lg border border-accent/50 bg-accent/10 px-3 py-1 font-label text-xs uppercase tracking-widest text-accent">
+                Tap
+              </button>
+            </Tip>
           </div>
           <input type="range" min={20} max={300} value={m.bpm} onChange={(e) => m.setBpm(Number(e.target.value))} />
         </div>
